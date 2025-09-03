@@ -4,8 +4,9 @@ import axios from "axios";
 // Base API configuration
 const API_CONFIG = {
   WEBFLOW: {
-    BASE_URL: "/api/webflow",
-    // "https://api.webflow.com/v2",
+    BASE_URL: "https://api.webflow.com/v2",
+    // "/api/webflow",
+
     TIMEOUT: 10000,
     HEADERS: {
       "Content-Type": "application/json",
