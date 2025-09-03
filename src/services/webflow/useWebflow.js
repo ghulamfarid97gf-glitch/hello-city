@@ -39,23 +39,23 @@ export const useApiCall = (apiFunction, dependencies = []) => {
 };
 
 // Hook for fetching collections (siteId as parameter)
-export const useCollections = (siteId, autoFetch = true) => {
+export const useCollections = (collectionId, autoFetch = true) => {
   const { data, loading, error, execute } = useApiCall(
     webflowService.getCollections.bind(webflowService),
-    [siteId]
+    [collectionId]
   );
 
   const fetchCollections = useCallback(() => {
-    if (siteId) {
-      execute(siteId);
+    if (collectionId) {
+      execute(collectionId);
     }
-  }, [execute, siteId]);
+  }, [execute, collectionId]);
 
   useEffect(() => {
-    if (autoFetch && siteId) {
+    if (autoFetch && collectionId) {
       fetchCollections();
     }
-  }, [fetchCollections, autoFetch, siteId]);
+  }, [fetchCollections, autoFetch, collectionId]);
   return {
     collections: data?.items || [],
     loading,
@@ -64,8 +64,76 @@ export const useCollections = (siteId, autoFetch = true) => {
   };
 };
 
+// Hook for fetching collections (siteId as parameter)
+export const useCollectionFields = (siteId, autoFetch = true) => {
+  const { data, loading, error, execute } = useApiCall(
+    webflowService.getCollectionFields.bind(webflowService),
+    [siteId]
+  );
+
+  const fetchCollectionFields = useCallback(() => {
+    if (siteId) {
+      execute(siteId);
+    }
+  }, [execute, siteId]);
+
+  useEffect(() => {
+    if (autoFetch && siteId) {
+      fetchCollectionFields();
+    }
+  }, [fetchCollectionFields, autoFetch, siteId]);
+  return {
+    collectionsFields: data || {},
+    loading,
+    error,
+    refetch: fetchCollectionFields,
+  };
+};
+
 // Hook for creating a perk
 export const useCreatePerk = () => {
+  const { data, loading, error, execute } = useApiCall(
+    webflowService.createCollectionItem.bind(webflowService)
+  );
+
+  const createPerk = useCallback(
+    (collectionId, perkData) => {
+      return execute(collectionId, perkData);
+    },
+    [execute]
+  );
+
+  return {
+    createPerk,
+    data,
+    loading,
+    error,
+  };
+};
+
+// Hook for creating a perk
+export const useCreatePlace = () => {
+  const { data, loading, error, execute } = useApiCall(
+    webflowService.createCollectionItem.bind(webflowService)
+  );
+
+  const createPerk = useCallback(
+    (collectionId, perkData) => {
+      return execute(collectionId, perkData);
+    },
+    [execute]
+  );
+
+  return {
+    createPerk,
+    data,
+    loading,
+    error,
+  };
+};
+
+// Hook for creating a perk
+export const useCreateOffer = () => {
   const { data, loading, error, execute } = useApiCall(
     webflowService.createCollectionItem.bind(webflowService)
   );

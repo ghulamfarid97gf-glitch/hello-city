@@ -40,6 +40,18 @@ class WebflowService {
     return this.makeRequest(`/collections/${siteId}/items`);
   }
 
+  // Get all collections for a site (siteId passed as argument)
+  async getCollectionFields(siteId) {
+    if (!siteId) {
+      return {
+        data: null,
+        success: false,
+        error: { message: "Site ID is required" },
+      };
+    }
+    return this.makeRequest(`/collections/${siteId}`);
+  }
+
   // Create new collection item (perk)
   async createCollectionItem(collectionId, itemData) {
     if (!collectionId) {

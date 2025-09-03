@@ -4,11 +4,7 @@ import { useCollections } from "../../services/webflow/useWebflow";
 import webflowService from "../../services/webflow/webflowService";
 import Loading from "./Loading";
 import { toast } from "react-toastify";
-
-// Constants - move these to constants/index.js
-const COLLECTIONS = {
-  PERKS: "689046505062d22cb6485ac6", // Update this to your actual collection ID
-};
+import { collectionsListStyles } from "../../styles/collectionsListStyles.style";
 
 // Confirmation Modal Component
 const ConfirmationModal = ({
@@ -22,90 +18,48 @@ const ConfirmationModal = ({
 }) => {
   if (!isOpen) return null;
 
-  const overlayStyle = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  };
-
-  const modalStyle = {
-    backgroundColor: "#ffffff",
-    borderRadius: "12px",
-    padding: "24px",
-    maxWidth: "400px",
-    width: "90%",
-    boxShadow:
-      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-  };
-
-  const titleStyle = {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: "8px",
-  };
-
-  const messageStyle = {
-    fontSize: "14px",
-    color: "#6b7280",
-    marginBottom: "24px",
-    lineHeight: "1.5",
-  };
-
-  const buttonContainerStyle = {
-    display: "flex",
-    gap: "12px",
-    justifyContent: "flex-end",
-  };
-
-  const cancelButtonStyle = {
-    padding: "10px 20px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    backgroundColor: "#ffffff",
-    color: "#374151",
-    cursor: "pointer",
-    fontWeight: "500",
-    fontSize: "14px",
-  };
-
-  const confirmButtonStyle = {
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "6px",
-    backgroundColor: "#dc2626",
-    color: "#ffffff",
-    cursor: "pointer",
-    fontWeight: "500",
-    fontSize: "14px",
-  };
-
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-        <h3 style={titleStyle}>{title}</h3>
-        <p style={messageStyle}>{message}</p>
-        <div style={buttonContainerStyle}>
+    <div style={collectionsListStyles.modalOverlayStyle} onClick={onClose}>
+      <div
+        style={collectionsListStyles.modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={collectionsListStyles.modalTitleStyle}>{title}</h3>
+        <p style={collectionsListStyles.modalMessageStyle}>{message}</p>
+        <div style={collectionsListStyles.modalButtonContainerStyle}>
           <button
-            style={cancelButtonStyle}
+            style={collectionsListStyles.modalCancelButtonStyle}
             onClick={onClose}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#f9fafb")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#ffffff")}
+            onMouseOver={(e) =>
+              Object.assign(
+                e.target.style,
+                collectionsListStyles.modalCancelButtonHoverStyle
+              )
+            }
+            onMouseOut={(e) =>
+              Object.assign(
+                e.target.style,
+                collectionsListStyles.modalCancelButtonStyle
+              )
+            }
           >
             {cancelText}
           </button>
           <button
-            style={confirmButtonStyle}
+            style={collectionsListStyles.modalConfirmButtonStyle}
             onClick={onConfirm}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#b91c1c")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#dc2626")}
+            onMouseOver={(e) =>
+              Object.assign(
+                e.target.style,
+                collectionsListStyles.modalConfirmButtonHoverStyle
+              )
+            }
+            onMouseOut={(e) =>
+              Object.assign(
+                e.target.style,
+                collectionsListStyles.modalConfirmButtonStyle
+              )
+            }
           >
             {confirmText}
           </button>
@@ -115,7 +69,7 @@ const ConfirmationModal = ({
   );
 };
 
-const CollectionsList = () => {
+const CollectionsList = ({ collectionId }) => {
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,7 +80,7 @@ const CollectionsList = () => {
 
   // Use collections hook to get items from the collection
   const { collections, loading, error, refetch } = useCollections(
-    COLLECTIONS.PERKS,
+    collectionId,
     true
   );
 
@@ -144,25 +98,24 @@ const CollectionsList = () => {
 
     try {
       const result = await webflowService.deleteCollectionItem(
-        COLLECTIONS.PERKS,
+        collectionId,
         perkToDelete
       );
 
       if (result.success) {
-        toast.success("Perk deleted successfully!", {
+        toast.success("Item deleted successfully!", {
           position: "top-right",
           autoClose: 3000,
         });
-        // Refetch the data to update the list
         refetch();
       } else {
-        toast.error(`Failed to delete perk: ${result.error.message}`, {
+        toast.error(`Failed to delete item: ${result.error.message}`, {
           position: "top-right",
           autoClose: 5000,
         });
       }
     } catch (error) {
-      toast.error(`Error deleting perk: ${error.message}`, {
+      toast.error(`Error deleting item: ${error.message}`, {
         position: "top-right",
         autoClose: 5000,
       });
@@ -178,7 +131,27 @@ const CollectionsList = () => {
   };
 
   const handleEdit = (perkId) => {
-    navigate(`/perks/edit/${perkId}`);
+    // Dynamic navigation based on current path
+    const currentPath = window.location.pathname;
+    if (currentPath.includes("/offers")) {
+      navigate(`/offers/edit/${perkId}`);
+    } else if (currentPath.includes("/places")) {
+      navigate(`/places/edit/${perkId}`);
+    } else {
+      navigate(`/perks/edit/${perkId}`);
+    }
+  };
+
+  const handleAddNew = () => {
+    // Dynamic navigation based on current path
+    const currentPath = window.location.pathname;
+    if (currentPath.includes("/offers")) {
+      navigate("/offers/add");
+    } else if (currentPath.includes("/places")) {
+      navigate("/places/add");
+    } else {
+      navigate("/perks/add");
+    }
   };
 
   const handleRefetch = async () => {
@@ -194,6 +167,14 @@ const CollectionsList = () => {
         autoClose: 3000,
       });
     }
+  };
+
+  // Get collection type for display
+  const getCollectionType = () => {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes("/offers")) return "Offers";
+    if (currentPath.includes("/places")) return "Places";
+    return "Perks";
   };
 
   // Pagination logic
@@ -217,7 +198,6 @@ const CollectionsList = () => {
       "createdOn",
     ];
 
-    // Define your preferred order for field data columns
     const preferredFieldOrder = [
       "name",
       "perk-title",
@@ -231,7 +211,6 @@ const CollectionsList = () => {
       "end-date",
       "thumbnail-image",
       "slug",
-      // Add other fields in your preferred order
       "perk-name",
       "small-description",
       "perks-short-description",
@@ -249,7 +228,6 @@ const CollectionsList = () => {
       "video-link",
     ];
 
-    // Get all available field data keys
     const fieldDataKeys = new Set();
     items.forEach((item) => {
       if (item.fieldData) {
@@ -257,32 +235,27 @@ const CollectionsList = () => {
       }
     });
 
-    // Order fieldData columns based on preferred order
     const orderedFieldDataColumns = [];
     const availableFieldDataKeys = Array.from(fieldDataKeys);
 
-    // Add fields in preferred order (if they exist)
     preferredFieldOrder.forEach((field) => {
       if (availableFieldDataKeys.includes(field)) {
         orderedFieldDataColumns.push(field);
       }
     });
 
-    // Add any remaining fields that weren't in the preferred order
     availableFieldDataKeys.forEach((field) => {
       if (!preferredFieldOrder.includes(field)) {
         orderedFieldDataColumns.push(field);
       }
     });
 
-    // Return columns in custom order: ordered field data + core fields
     return [...orderedFieldDataColumns, ...coreFields];
   };
 
   const formatCellValue = (value, key) => {
     if (value === null || value === undefined) return "-";
 
-    // Handle different data types
     if (typeof value === "boolean") {
       return value ? "Yes" : "No";
     }
@@ -311,7 +284,6 @@ const CollectionsList = () => {
     }
 
     if (typeof value === "string" && value.includes("<")) {
-      // Strip HTML for display
       return value.replace(/<[^>]*>/g, "").substring(0, 100) + "...";
     }
 
@@ -334,156 +306,56 @@ const CollectionsList = () => {
     return formatCellValue(item.fieldData?.[column], column);
   };
 
-  // Styles
-  const containerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-    padding: "20px",
-  };
-
-  const headerStyle = {
-    backgroundColor: "#ffffff",
-    padding: "24px",
-    borderRadius: "8px",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
-    border: "1px solid #e5e7eb",
-  };
-
-  const headerContentStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-
-  const titleStyle = {
-    fontSize: "20px",
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: "8px",
-  };
-
-  const subtitleStyle = {
-    fontSize: "14px",
-    color: "#6b7280",
-  };
-
-  const buttonStyle = {
-    padding: "12px 24px",
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    borderRadius: "8px",
-    border: "none",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-  };
-
-  const statsStyle = {
-    backgroundColor: "#f9fafb",
-    borderRadius: "8px",
-    padding: "16px",
-  };
-
-  const statsGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
-    fontSize: "14px",
-  };
-
-  const tableContainerStyle = {
-    backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
-    border: "1px solid #e5e7eb",
-    overflow: "hidden",
-  };
-
-  const tableWrapperStyle = {
-    overflowX: "auto",
-    maxWidth: "100%",
-    position: "relative",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-  };
-
-  const tableStyle = {
-    width: "100%",
-    minWidth: "2000px", // Ensures horizontal scroll
-    borderCollapse: "collapse",
-  };
-
-  const paginationStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px 20px",
-    borderTop: "1px solid #e5e7eb",
-    backgroundColor: "#f9fafb",
-  };
-
-  const selectStyle = {
-    padding: "6px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-  };
-
-  const pageButtonStyle = {
-    padding: "8px 12px",
-    margin: "0 4px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    backgroundColor: "#ffffff",
-    cursor: "pointer",
-    fontSize: "14px",
-  };
-
-  const activePageButtonStyle = {
-    ...pageButtonStyle,
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    borderColor: "#2563eb",
-  };
-
   return (
-    <div style={containerStyle}>
+    <div style={collectionsListStyles.containerStyle}>
       {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Perk"
-        message="Are you sure you want to delete this perk? This action cannot be undone."
+        title={`Delete ${getCollectionType().slice(0, -1)}`}
+        message={`Are you sure you want to delete this ${getCollectionType().toLowerCase().slice(0, -1)}? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
       />
 
       {/* Header */}
-      <div style={headerStyle}>
-        <div style={headerContentStyle}>
+      <div style={collectionsListStyles.headerStyle}>
+        <div style={collectionsListStyles.headerContentStyle}>
           <div>
-            <h2 style={titleStyle}>Perks Management</h2>
-            <p style={subtitleStyle}>Collection ID: {COLLECTIONS.PERKS}</p>
+            <h2 style={collectionsListStyles.titleStyle}>
+              {getCollectionType()} Management
+            </h2>
+            <p style={collectionsListStyles.subtitleStyle}>
+              Collection ID: {collectionId}
+            </p>
           </div>
           <button
-            style={buttonStyle}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
-            onClick={() => navigate("/perks/add")}
+            style={collectionsListStyles.buttonStyle}
+            onMouseOver={(e) =>
+              Object.assign(
+                e.target.style,
+                collectionsListStyles.buttonHoverStyle
+              )
+            }
+            onMouseOut={(e) =>
+              Object.assign(e.target.style, collectionsListStyles.buttonStyle)
+            }
+            onClick={handleAddNew}
           >
-            + Add New Perk
+            + Add New {getCollectionType().slice(0, -1)}
           </button>
         </div>
       </div>
 
       {/* Stats */}
       {collections && collections.length > 0 && (
-        <div style={statsStyle}>
-          <div style={statsGridStyle}>
+        <div style={collectionsListStyles.statsStyle}>
+          <div style={collectionsListStyles.statsGridStyle}>
             <div>
-              <span style={{ color: "#6b7280" }}>Total Perks: </span>
+              <span style={{ color: "#6b7280" }}>
+                Total {getCollectionType()}:{" "}
+              </span>
               <span style={{ fontWeight: "600" }}>{collections.length}</span>
             </div>
             <div>
@@ -509,38 +381,26 @@ const CollectionsList = () => {
       )}
 
       {/* Loading State */}
-      {loading && <Loading text="Loading perks..." />}
+      {loading && <Loading text="Loading data..." />}
 
       {/* Error State */}
       {error && (
-        <div
-          style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "8px",
-            padding: "16px",
-          }}
-        >
-          <h3 style={{ color: "#991b1b", fontWeight: "600" }}>
-            Error loading perks
+        <div style={collectionsListStyles.errorContainerStyle}>
+          <h3 style={collectionsListStyles.errorTitleStyle}>
+            Error loading {getCollectionType().toLowerCase()}
           </h3>
-          <p style={{ color: "#dc2626", marginTop: "4px" }}>{error.message}</p>
+          <p style={collectionsListStyles.errorMessageStyle}>{error.message}</p>
           <button
-            style={{
-              marginTop: "12px",
-              padding: "8px 16px",
-              backgroundColor: "#dc2626",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            style={collectionsListStyles.errorButtonStyle}
             onClick={() => {
               refetch();
-              toast.info("Retrying to load perks...", {
-                position: "top-right",
-                autoClose: 2000,
-              });
+              toast.info(
+                `Retrying to load ${getCollectionType().toLowerCase()}...`,
+                {
+                  position: "top-right",
+                  autoClose: 2000,
+                }
+              );
             }}
           >
             Try Again
@@ -548,89 +408,54 @@ const CollectionsList = () => {
         </div>
       )}
 
-      {/* No Perks State */}
+      {/* No Data State */}
       {!loading && !error && (!collections || collections.length === 0) && (
-        <div
-          style={{
-            backgroundColor: "#f9fafb",
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "48px",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "48px",
-              color: "#9ca3af",
-              marginBottom: "16px",
-            }}
-          >
-            📋
-          </div>
-          <h3
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#111827",
-              marginBottom: "8px",
-            }}
-          >
-            No perks found
+        <div style={collectionsListStyles.noDataContainerStyle}>
+          <div style={collectionsListStyles.noDataIconStyle}>📋</div>
+          <h3 style={collectionsListStyles.noDataTitleStyle}>
+            No {getCollectionType().toLowerCase()} found
           </h3>
-          <p style={{ color: "#6b7280", marginBottom: "24px" }}>
-            Get started by creating your first perk
+          <p style={collectionsListStyles.noDataMessageStyle}>
+            Get started by creating your first{" "}
+            {getCollectionType().toLowerCase().slice(0, -1)}
           </p>
-          <button style={buttonStyle} onClick={() => navigate("/perks/add")}>
-            Create First Perk
+          <button
+            style={collectionsListStyles.buttonStyle}
+            onClick={handleAddNew}
+          >
+            Create First {getCollectionType().slice(0, -1)}
           </button>
         </div>
       )}
 
       {/* Table */}
       {collections && collections.length > 0 && (
-        <div style={tableContainerStyle}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "16px 20px",
-              borderBottom: "1px solid #e5e7eb",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#111827",
-                margin: 0,
-              }}
-            >
-              Perks Data ({collections.length})
+        <div style={collectionsListStyles.tableContainerStyle}>
+          <div style={collectionsListStyles.tableHeaderStyle}>
+            <h3 style={collectionsListStyles.tableHeaderTitleStyle}>
+              {getCollectionType()} Data ({collections.length})
             </h3>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 12px",
-                  backgroundColor: "#eff6ff",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  color: "#1d4ed8",
-                  fontWeight: "500",
-                }}
-              >
+            <div style={collectionsListStyles.tableHeaderActionsStyle}>
+              <div style={collectionsListStyles.scrollHintStyle}>
                 <span>⟵ Scroll horizontally to view all columns</span>
               </div>
               <button
-                style={{ ...buttonStyle, padding: "8px 16px" }}
+                style={{
+                  ...collectionsListStyles.buttonStyle,
+                  padding: "8px 16px",
+                }}
                 onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#1d4ed8")
+                  Object.assign(
+                    e.target.style,
+                    collectionsListStyles.buttonHoverStyle
+                  )
                 }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
+                onMouseOut={(e) =>
+                  Object.assign(e.target.style, {
+                    ...collectionsListStyles.buttonStyle,
+                    padding: "8px 16px",
+                  })
+                }
                 onClick={handleRefetch}
                 disabled={loading}
               >
@@ -639,169 +464,70 @@ const CollectionsList = () => {
             </div>
           </div>
 
-          <div style={tableWrapperStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={{ backgroundColor: "#f9fafb" }}>
-                  {getTableColumns(collections).map((column) => (
-                    <th
-                      key={column}
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                        color: "#374151",
-                        borderBottom: "1px solid #e5e7eb",
-                        minWidth: "150px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {column}
-                    </th>
-                  ))}
-                  {/* Sticky Actions Column */}
-                  <th
-                    style={{
-                      position: "sticky",
-                      right: 0,
-                      backgroundColor: "#1f2937",
-                      padding: "12px 16px",
-                      textAlign: "center",
-                      fontWeight: "700",
-                      color: "#ffffff",
-                      borderLeft: "3px solid #374151",
-                      zIndex: 20,
-                      minWidth: "140px",
-                      boxShadow: "-4px 0 8px rgba(0,0,0,0.1)",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedItems.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb",
-                      borderBottom: "1px solid #e5e7eb",
-                    }}
-                  >
+          <div style={{ position: "relative" }}>
+            <div style={collectionsListStyles.tableWrapperStyle}>
+              <table style={collectionsListStyles.tableStyle}>
+                <thead style={collectionsListStyles.tableHeadStyle}>
+                  <tr>
                     {getTableColumns(collections).map((column) => (
-                      <td
+                      <th
                         key={column}
-                        style={{
-                          padding: "12px 16px",
-                          color: "#374151",
-                          fontSize: "14px",
-                          maxWidth: "200px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          textAlign: "left",
-                        }}
+                        style={collectionsListStyles.tableHeaderCellStyle}
                       >
-                        <span title={getCellValue(item, column)}>
-                          {getCellValue(item, column)}
-                        </span>
-                      </td>
+                        {column}
+                      </th>
                     ))}
-                    {/* Sticky Actions Column */}
-                    <td
+                    <th style={collectionsListStyles.stickyActionHeaderStyle}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((item, index) => (
+                    <tr
+                      key={item.id}
                       style={{
-                        position: "sticky",
-                        right: 0,
-                        backgroundColor:
-                          index % 2 === 0 ? "#ffffff" : "#f9fafb",
-                        padding: "12px 16px",
-                        borderLeft: "2px solid #e5e7eb",
-                        zIndex: 9,
+                        ...collectionsListStyles.tableBodyRowStyle,
+                        ...(index % 2 === 0
+                          ? collectionsListStyles.evenRowStyle
+                          : collectionsListStyles.oddRowStyle),
                       }}
                     >
-                      <div
+                      {getTableColumns(collections).map((column) => (
+                        <td
+                          key={column}
+                          style={collectionsListStyles.tableCellStyle}
+                        >
+                          <span title={getCellValue(item, column)}>
+                            {getCellValue(item, column)}
+                          </span>
+                        </td>
+                      ))}
+                      <td
                         style={{
-                          display: "flex",
-                          gap: "8px",
-                          justifyContent: "center",
+                          ...collectionsListStyles.stickyActionCellStyle,
+                          backgroundColor:
+                            index % 2 === 0 ? "#ffffff" : "#f9fafb",
                         }}
                       >
-                        <button
-                          onClick={() => handleEdit(item.id)}
-                          style={{
-                            padding: "6px",
-                            border: "none",
-                            borderRadius: "4px",
-                            backgroundColor: "#eff6ff",
-                            color: "#2563eb",
-                            cursor: "pointer",
-                          }}
-                          onMouseOver={(e) =>
-                            (e.target.style.backgroundColor = "#dbeafe")
-                          }
-                          onMouseOut={(e) =>
-                            (e.target.style.backgroundColor = "#eff6ff")
-                          }
-                          title="Edit"
-                        >
-                          <svg
-                            style={{ width: "14px", height: "14px" }}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        <div style={collectionsListStyles.actionButtonsStyle}>
+                          <button
+                            onClick={() => handleEdit(item.id)}
+                            style={collectionsListStyles.editButtonStyle}
+                            onMouseOver={(e) =>
+                              Object.assign(
+                                e.target.style,
+                                collectionsListStyles.editButtonHoverStyle
+                              )
+                            }
+                            onMouseOut={(e) =>
+                              Object.assign(
+                                e.target.style,
+                                collectionsListStyles.editButtonStyle
+                              )
+                            }
+                            title="Edit"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(item.id)}
-                          disabled={deleteLoading === item.id}
-                          style={{
-                            padding: "6px",
-                            border: "none",
-                            borderRadius: "4px",
-                            backgroundColor:
-                              deleteLoading === item.id ? "#f3f4f6" : "#fef2f2",
-                            color:
-                              deleteLoading === item.id ? "#6b7280" : "#dc2626",
-                            cursor:
-                              deleteLoading === item.id
-                                ? "not-allowed"
-                                : "pointer",
-                            opacity: deleteLoading === item.id ? 0.5 : 1,
-                          }}
-                          onMouseOver={(e) => {
-                            if (deleteLoading !== item.id) {
-                              e.target.style.backgroundColor = "#fee2e2";
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            if (deleteLoading !== item.id) {
-                              e.target.style.backgroundColor = "#fef2f2";
-                            }
-                          }}
-                          title={
-                            deleteLoading === item.id ? "Deleting..." : "Delete"
-                          }
-                        >
-                          {deleteLoading === item.id ? (
-                            <div
-                              style={{
-                                width: "14px",
-                                height: "14px",
-                                border: "2px solid #6b7280",
-                                borderTop: "2px solid transparent",
-                                borderRadius: "50%",
-                                animation: "spin 1s linear infinite",
-                              }}
-                            />
-                          ) : (
                             <svg
                               style={{ width: "14px", height: "14px" }}
                               fill="none"
@@ -812,26 +538,87 @@ const CollectionsList = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                               />
                             </svg>
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(item.id)}
+                            disabled={deleteLoading === item.id}
+                            style={{
+                              ...collectionsListStyles.deleteButtonStyle,
+                              ...(deleteLoading === item.id
+                                ? collectionsListStyles.deleteButtonDisabledStyle
+                                : {}),
+                            }}
+                            onMouseOver={(e) => {
+                              if (deleteLoading !== item.id) {
+                                Object.assign(
+                                  e.target.style,
+                                  collectionsListStyles.deleteButtonHoverStyle
+                                );
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (deleteLoading !== item.id) {
+                                Object.assign(
+                                  e.target.style,
+                                  collectionsListStyles.deleteButtonStyle
+                                );
+                              }
+                            }}
+                            title={
+                              deleteLoading === item.id
+                                ? "Deleting..."
+                                : "Delete"
+                            }
+                          >
+                            {deleteLoading === item.id ? (
+                              <div
+                                style={collectionsListStyles.smallSpinnerStyle}
+                              />
+                            ) : (
+                              <svg
+                                style={{ width: "14px", height: "14px" }}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Loading Overlay */}
+            {loading && (
+              <div style={collectionsListStyles.loadingOverlayStyle}>
+                <div style={collectionsListStyles.loadingContentStyle}>
+                  <div style={collectionsListStyles.spinnerStyle}></div>
+                  <span style={collectionsListStyles.loadingTextStyle}>
+                    Loading {getCollectionType().toLowerCase()}...
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
-          <div style={paginationStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <span style={{ fontSize: "14px", color: "#6b7280" }}>
+          <div style={collectionsListStyles.paginationStyle}>
+            <div style={collectionsListStyles.paginationInfoStyle}>
+              <div style={collectionsListStyles.itemsPerPageStyle}>
+                <span style={collectionsListStyles.paginationTextStyle}>
                   Items per page:
                 </span>
                 <select
@@ -840,7 +627,7 @@ const CollectionsList = () => {
                     setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  style={selectStyle}
+                  style={collectionsListStyles.selectStyle}
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -850,19 +637,20 @@ const CollectionsList = () => {
                 </select>
               </div>
 
-              <div style={{ fontSize: "14px", color: "#6b7280" }}>
+              <div style={collectionsListStyles.paginationTextStyle}>
                 Showing {startIndex + 1} - {endIndex} of {totalItems} entries
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={collectionsListStyles.paginationButtonsStyle}>
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 style={{
-                  ...pageButtonStyle,
-                  opacity: currentPage === 1 ? 0.5 : 1,
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                  ...collectionsListStyles.pageButtonStyle,
+                  ...(currentPage === 1
+                    ? collectionsListStyles.disabledButtonStyle
+                    : {}),
                 }}
               >
                 Previous
@@ -885,8 +673,8 @@ const CollectionsList = () => {
                     onClick={() => setCurrentPage(pageNum)}
                     style={
                       currentPage === pageNum
-                        ? activePageButtonStyle
-                        : pageButtonStyle
+                        ? collectionsListStyles.activePageButtonStyle
+                        : collectionsListStyles.pageButtonStyle
                     }
                   >
                     {pageNum}
@@ -900,10 +688,10 @@ const CollectionsList = () => {
                 }
                 disabled={currentPage === totalPages}
                 style={{
-                  ...pageButtonStyle,
-                  opacity: currentPage === totalPages ? 0.5 : 1,
-                  cursor:
-                    currentPage === totalPages ? "not-allowed" : "pointer",
+                  ...collectionsListStyles.pageButtonStyle,
+                  ...(currentPage === totalPages
+                    ? collectionsListStyles.disabledButtonStyle
+                    : {}),
                 }}
               >
                 Next
@@ -913,7 +701,7 @@ const CollectionsList = () => {
         </div>
       )}
 
-      {/* Add CSS for spinner animation */}
+      {/* CSS Animation */}
       <style jsx>{`
         @keyframes spin {
           0% {

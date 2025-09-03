@@ -4,15 +4,27 @@ import {
   useCreatePerk,
   useUpdatePerk,
   usePerk,
+  useCollectionFields,
+  useCollections,
 } from "../services/webflow/useWebflow";
 import { toast } from "react-toastify";
+import {
+  containerStyle,
+  fieldStyle,
+  formSectionStyle,
+  gridStyle,
+  labelStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+  sectionTitleStyle,
+} from "../styles/perkFormStyles.styles";
 
 // Constants
 const COLLECTIONS = {
   PERKS: "689046505062d22cb6485ac6",
 };
 
-const PerkForm = () => {
+const PerkForm = ({ collectionId, collectionName }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -24,7 +36,15 @@ const PerkForm = () => {
     perk,
     loading: fetching,
     error: fetchError,
-  } = usePerk(COLLECTIONS.PERKS, id, isEdit);
+  } = usePerk(collectionId, id, isEdit);
+
+  // Use collections hook to get items from the collection
+  const {
+    collectionsFields,
+    loading: fieldsLoading,
+    error,
+    refetch,
+  } = useCollectionFields(collectionId, true);
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -36,337 +56,40 @@ const PerkForm = () => {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [schemaLoading, setSchemaLoading] = useState(true);
 
-  // Fetch collection schema - replace this with your actual API call
-  const fetchCollectionSchema = async () => {
-    try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/collections/${COLLECTIONS.PERKS}`);
-      // const schema = await response.json();
+  // State for MultiReference collections data
+  const [multiReferenceData, setMultiReferenceData] = useState({});
+  const [multiReferenceLoading, setMultiReferenceLoading] = useState({});
 
-      // Using your provided schema structure for now
-      const schema = {
-        id: "689046505062d22cb6485ac6",
-        displayName: "Perks",
-        singularName: "Perk",
-        slug: "perk",
-        fields: [
-          {
-            id: "05618c3d0bec3c9e39ff940c8a8ad321",
-            isEditable: true,
-            isRequired: true,
-            type: "PlainText",
-            slug: "name",
-            displayName: "Name",
-            helpText: null,
-            validations: { maxLength: 256 },
-          },
-          {
-            id: "ff62292418ac2d3bd91bbbbcdd8d6636",
-            isEditable: true,
-            isRequired: true,
-            type: "PlainText",
-            slug: "slug",
-            displayName: "Slug",
-            helpText: null,
-            validations: {
-              maxLength: 256,
-              pattern: {},
-              messages: {
-                pattern:
-                  "Must be alphanumerical and not contain any spaces or special characters",
-                maxLength: "Must be less than 256 characters",
-              },
-            },
-          },
-          {
-            id: "745a3a9bd868ad1ee46e7178af885466",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "perk-title",
-            displayName: "Perk Title",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "6df8c3a1af2780dd959babf8cd7ed52f",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "perk-name",
-            displayName: "Perk Name",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "7ac0ec383999dd445e284e51429fa55a",
-            isEditable: true,
-            isRequired: false,
-            type: "Option",
-            slug: "type-of-perk",
-            displayName: "Type of Perk",
-            helpText: null,
-            validations: {
-              options: [
-                { name: "Claim", id: "b0ac85c271b92524d61bfb0dd35d4c6a" },
-                { name: "Become Paid", id: "942b17dad8608b54fc4a52dbc692f52f" },
-                { name: "Purchase", id: "0968c9a6688452c2c36519d2db2cacba" },
-                { name: "Become Free", id: "04616dc1dfe624c55f8ef7b282869ee1" },
-                { name: "Raffle", id: "1a6609341ed240ac26cca3deae2e4813" },
-              ],
-            },
-          },
-          {
-            id: "d645691345e124726317197966fcb25f",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "member-role",
-            displayName: "Member Role",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "30b9752e5315cf1086b9a606943d86ed",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "perks-short-description",
-            displayName: "Perks Short Description",
-            helpText: null,
-            validations: { singleLine: false },
-          },
-          {
-            id: "975ec92ffeec6a3462178562c72605d7",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "small-description",
-            displayName: "Small Description",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "c58191f2171bee4b7ddce2f0ab8554fb",
-            isEditable: true,
-            isRequired: false,
-            type: "RichText",
-            slug: "description",
-            displayName: "Event Description",
-            helpText: "About the event",
-            validations: null,
-          },
-          {
-            id: "5ab38fdefa6aa8b7535ca2bbb69d3f22",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "location",
-            displayName: "Location / Venue / Place name",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "cbd8d39cc5b017393985444800d819fb",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "location-address",
-            displayName: "Location Address",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "9158023d89848aff30a59a5d836182e9",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "point-to-place",
-            displayName: "Point to Place",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "f46a8934b53adea4253c7c8b0bcee58d",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "event-name",
-            displayName: "Event Name",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "d7a5c795d616e97c43e59bfe4e8f54b0",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "time",
-            displayName: "Time",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "70e4361519b31b939ece0b7d410c3d91",
-            isEditable: true,
-            isRequired: false,
-            type: "Number",
-            slug: "original-price",
-            displayName: "Original Price",
-            helpText: null,
-            validations: {
-              format: "integer",
-              precision: 1,
-              allowNegative: false,
-            },
-          },
-          {
-            id: "3c699f8fc67fbf82d91c54f166347a50",
-            isEditable: true,
-            isRequired: false,
-            type: "Number",
-            slug: "how-much-you-save",
-            displayName: "How much you save",
-            helpText: null,
-            validations: {
-              precision: 1,
-              allowNegative: true,
-            },
-          },
-          {
-            id: "17645ea5d925edce4b652ffa129370be",
-            isEditable: true,
-            isRequired: false,
-            type: "Number",
-            slug: "how-much-you-would-pay-at-the-place",
-            displayName: "How much you would pay at the place",
-            helpText: null,
-            validations: {
-              precision: 1,
-              allowNegative: true,
-            },
-          },
-          {
-            id: "64bd14d1cd23c9a28620b42a67fd8569",
-            isEditable: true,
-            isRequired: false,
-            type: "Number",
-            slug: "percent-off-this-deal-gives-you",
-            displayName: "Percent off this deal gives you",
-            helpText: null,
-            validations: {
-              precision: 1,
-              allowNegative: true,
-            },
-          },
-          {
-            id: "b352f1007a92d6772b1316f70fc6365b",
-            isEditable: true,
-            isRequired: false,
-            type: "Number",
-            slug: "price-you-pay-hellocity-to-get-it",
-            displayName: "Price you pay HelloCity to get it",
-            helpText: null,
-            validations: {
-              precision: 1,
-              allowNegative: true,
-            },
-          },
-          {
-            id: "7ea576e124b83ea54fb77580b115f17f",
-            isEditable: true,
-            isRequired: false,
-            type: "PlainText",
-            slug: "plan-wise-coupen",
-            displayName: "Plan Wise Coupen",
-            helpText: null,
-            validations: { singleLine: true },
-          },
-          {
-            id: "3f259535884f1aec8c775faad057ac5e",
-            isEditable: true,
-            isRequired: false,
-            type: "DateTime",
-            slug: "start-date",
-            displayName: "Start Date",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "2d135cc17d5c489c46caf7b852087cb8",
-            isEditable: true,
-            isRequired: false,
-            type: "DateTime",
-            slug: "end-date",
-            displayName: "End Date",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "b4eabf352ee1b8b2a6cc3bdec92fc3f5",
-            isEditable: true,
-            isRequired: false,
-            type: "Link",
-            slug: "ticket-link",
-            displayName: "Booking Link",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "00c220ac4edb556cef675cccc8435ffd",
-            isEditable: true,
-            isRequired: false,
-            type: "Link",
-            slug: "location-link",
-            displayName: "Location Link",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "7eb3080e17cb88a5cad53b7bac65620c",
-            isEditable: true,
-            isRequired: false,
-            type: "Link",
-            slug: "event-link",
-            displayName: "Event Link",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "f72aa631661628a747fdea79c8c15cea",
-            isEditable: true,
-            isRequired: false,
-            type: "VideoLink",
-            slug: "video-link",
-            displayName: "Video Link",
-            helpText: null,
-            validations: null,
-          },
-          {
-            id: "29add84f6f59b124a2bf01b906d10f87",
-            isEditable: true,
-            isRequired: false,
-            type: "Image",
-            slug: "thumbnail-image",
-            displayName: "Thumbnail Image",
-            helpText: null,
-            validations: null,
-          },
-        ],
-      };
+  // Hooks for fetching MultiReference collections
+  const offersCollectionId = "686cd18f382b5b2f1dcc787b";
+  const placesCollectionId = "688b15b04ee8c4d17f71c5c3";
 
-      return schema;
-    } catch (error) {
-      console.error("Error fetching collection schema:", error);
-      throw error;
-    }
-  };
+  const { collections: offersData, loading: offersLoading } = useCollections(
+    offersCollectionId,
+    true
+  );
+  const { collections: placesData, loading: placesLoading } = useCollections(
+    placesCollectionId,
+    true
+  );
+
+  // Update multiReferenceData when collections load
+  useEffect(() => {
+    setMultiReferenceData({
+      [offersCollectionId]: offersData || [],
+      [placesCollectionId]: placesData || [],
+    });
+    setMultiReferenceLoading({
+      [offersCollectionId]: offersLoading,
+      [placesCollectionId]: placesLoading,
+    });
+  }, [offersData, placesData, offersLoading, placesLoading]);
 
   // Load collection schema on mount
   useEffect(() => {
-    const loadCollectionSchema = async () => {
+    const loadCollectionSchema = async (collectionsFields) => {
       try {
-        const schema = await fetchCollectionSchema();
+        const schema = collectionsFields;
         setCollectionSchema(schema);
 
         // Initialize form data with default values based on schema
@@ -375,7 +98,7 @@ const PerkForm = () => {
           isDraft: false,
         };
 
-        schema.fields.forEach((field) => {
+        schema?.fields?.forEach((field) => {
           let defaultValue;
 
           switch (field.type) {
@@ -384,6 +107,9 @@ const PerkForm = () => {
               break;
             case "DateTime":
               defaultValue = "";
+              break;
+            case "MultiReference":
+              defaultValue = [];
               break;
             case "PlainText":
             case "RichText":
@@ -407,16 +133,18 @@ const PerkForm = () => {
       }
     };
 
-    loadCollectionSchema();
-  }, []);
+    if (collectionsFields) {
+      loadCollectionSchema(collectionsFields);
+    }
+  }, [collectionsFields]);
 
   // Load perk data for edit mode
   useEffect(() => {
-    if (perk && isEdit && collectionSchema) {
+    if (perk && isEdit && collectionSchema && !fieldsLoading) {
       const processedFieldData = { ...perk.fieldData };
 
       // Process complex field types for edit mode
-      collectionSchema.fields.forEach((field) => {
+      collectionSchema?.fields?.forEach((field) => {
         const fieldValue = processedFieldData[field.slug];
 
         if (fieldValue) {
@@ -449,6 +177,18 @@ const PerkForm = () => {
                 processedFieldData[field.slug] = fieldValue.url;
               }
               break;
+
+            case "MultiReference":
+              // Handle MultiReference - fieldValue should be array of IDs
+              if (Array.isArray(fieldValue)) {
+                processedFieldData[field.slug] = fieldValue;
+              } else if (fieldValue) {
+                // In case it's a single value, convert to array
+                processedFieldData[field.slug] = [fieldValue];
+              } else {
+                processedFieldData[field.slug] = [];
+              }
+              break;
           }
         }
       });
@@ -460,7 +200,7 @@ const PerkForm = () => {
         ...processedFieldData,
       }));
     }
-  }, [perk, isEdit, collectionSchema]);
+  }, [perk, isEdit, collectionSchema, fieldsLoading]);
 
   // Dynamic validation based on schema
   const validateForm = () => {
@@ -468,20 +208,31 @@ const PerkForm = () => {
 
     const newErrors = {};
 
-    collectionSchema.fields.forEach((field) => {
+    collectionSchema?.fields?.forEach((field) => {
       const value = formData[field.slug];
 
       // Required field validation
-      if (
-        field.isRequired &&
-        (!value || (typeof value === "string" && value.trim() === ""))
-      ) {
-        newErrors[field.slug] = `${field.displayName} is required`;
-        return;
+      if (field.isRequired) {
+        if (field.type === "MultiReference") {
+          if (!value || !Array.isArray(value) || value.length === 0) {
+            newErrors[field.slug] = `${field.displayName} is required`;
+            return;
+          }
+        } else if (
+          !value ||
+          (typeof value === "string" && value.trim() === "")
+        ) {
+          newErrors[field.slug] = `${field.displayName} is required`;
+          return;
+        }
       }
 
       // Skip further validation if field is empty and not required
-      if (!value || (typeof value === "string" && value.trim() === "")) {
+      if (field.type === "MultiReference") {
+        if (!value || !Array.isArray(value) || value.length === 0) {
+          return;
+        }
+      } else if (!value || (typeof value === "string" && value.trim() === "")) {
         return;
       }
 
@@ -515,6 +266,23 @@ const PerkForm = () => {
           ) {
             newErrors[field.slug] =
               `${field.displayName} must be less than ${field.validations.maxLength} characters`;
+          }
+          break;
+
+        case "MultiReference":
+          // Additional validation for MultiReference if needed
+          if (Array.isArray(value) && value.length > 0) {
+            // Validate that all selected IDs exist in the referenced collection
+            const referencedCollectionId = field.validations?.collectionId;
+            const availableItems =
+              multiReferenceData[referencedCollectionId] || [];
+            const availableIds = availableItems.map((item) => item.id);
+
+            const invalidIds = value.filter((id) => !availableIds.includes(id));
+            if (invalidIds.length > 0) {
+              newErrors[field.slug] =
+                `Some selected ${field.displayName.toLowerCase()} are no longer available`;
+            }
           }
           break;
       }
@@ -565,6 +333,36 @@ const PerkForm = () => {
     }
   };
 
+  const handleMultiReferenceChange = (fieldSlug, itemId, isChecked) => {
+    setFormData((prev) => {
+      const currentValues = prev[fieldSlug] || [];
+      let newValues;
+
+      if (isChecked) {
+        // Add the item if it's not already selected
+        newValues = currentValues.includes(itemId)
+          ? currentValues
+          : [...currentValues, itemId];
+      } else {
+        // Remove the item
+        newValues = currentValues.filter((id) => id !== itemId);
+      }
+
+      return {
+        ...prev,
+        [fieldSlug]: newValues,
+      };
+    });
+
+    // Clear error when user makes a selection
+    if (errors[fieldSlug]) {
+      setErrors((prev) => ({
+        ...prev,
+        [fieldSlug]: null,
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitAttempted(true);
@@ -578,7 +376,7 @@ const PerkForm = () => {
       const processedFormData = { ...formData };
 
       if (collectionSchema) {
-        collectionSchema.fields.forEach((field) => {
+        collectionSchema?.fields?.forEach((field) => {
           const fieldValue = processedFormData[field.slug];
 
           if (fieldValue) {
@@ -604,6 +402,15 @@ const PerkForm = () => {
                   processedFormData[field.slug] = fieldValue.trim();
                 }
                 break;
+
+              case "MultiReference":
+                // MultiReference values are already in the correct format (array of IDs)
+                if (Array.isArray(fieldValue)) {
+                  processedFormData[field.slug] = fieldValue;
+                } else {
+                  processedFormData[field.slug] = [];
+                }
+                break;
             }
           }
         });
@@ -611,14 +418,16 @@ const PerkForm = () => {
 
       let result;
       if (isEdit) {
-        result = await updatePerk(COLLECTIONS.PERKS, id, processedFormData);
+        result = await updatePerk(collectionId, id, processedFormData);
       } else {
-        result = await createPerk(COLLECTIONS.PERKS, processedFormData);
+        result = await createPerk(collectionId, processedFormData);
       }
 
       if (result.success) {
         toast.success(
-          isEdit ? "Perk updated successfully" : "Perk created successfully"
+          isEdit
+            ? `${collectionName} updated successfully`
+            : `${collectionName} created successfully`
         );
         navigate("/");
       } else {
@@ -654,10 +463,11 @@ const PerkForm = () => {
       dates: [],
       links: [],
       media: [],
+      references: [],
       other: [],
     };
 
-    collectionSchema.fields.forEach((field) => {
+    collectionSchema?.fields?.forEach((field) => {
       const slug = field.slug.toLowerCase();
 
       if (
@@ -694,12 +504,341 @@ const PerkForm = () => {
         categories.links.push(field);
       } else if (field.type === "Image" || field.type === "VideoLink") {
         categories.media.push(field);
+      } else if (field.type === "MultiReference") {
+        categories.references.push(field);
       } else {
         categories.other.push(field);
       }
     });
 
     return categories;
+  };
+
+  // State for dropdown management
+  const [dropdownStates, setDropdownStates] = useState({});
+  const [searchTerms, setSearchTerms] = useState({});
+
+  const toggleDropdown = (fieldSlug) => {
+    setDropdownStates((prev) => ({
+      ...prev,
+      [fieldSlug]: !prev[fieldSlug],
+    }));
+  };
+
+  const handleSearchChange = (fieldSlug, searchTerm) => {
+    setSearchTerms((prev) => ({
+      ...prev,
+      [fieldSlug]: searchTerm,
+    }));
+  };
+
+  const removeSelectedItem = (fieldSlug, itemId) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldSlug]: (prev[fieldSlug] || []).filter((id) => id !== itemId),
+    }));
+
+    // Clear error when user removes item
+    if (errors[fieldSlug]) {
+      setErrors((prev) => ({
+        ...prev,
+        [fieldSlug]: null,
+      }));
+    }
+  };
+
+  // Render MultiReference field
+  const renderMultiReferenceField = (field) => {
+    const fieldError = errors[field.slug];
+    const selectedValues = formData[field.slug] || [];
+    const referencedCollectionId = field.validations?.collectionId;
+    const availableItems = multiReferenceData[referencedCollectionId] || [];
+    const isLoading = multiReferenceLoading[referencedCollectionId];
+    const isOpen = dropdownStates[field.slug] || false;
+    const searchTerm = searchTerms[field.slug] || "";
+
+    if (isLoading) {
+      return (
+        <div
+          style={{
+            padding: "16px",
+            textAlign: "center",
+            color: "#6b7280",
+            backgroundColor: "#f9fafb",
+            borderRadius: "6px",
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          Loading {field.displayName.toLowerCase()}...
+        </div>
+      );
+    }
+
+    if (!availableItems.length) {
+      return (
+        <div
+          style={{
+            padding: "16px",
+            textAlign: "center",
+            color: "#ef4444",
+            backgroundColor: "#fef2f2",
+            borderRadius: "6px",
+            border: "1px solid #fecaca",
+          }}
+        >
+          No {field.displayName.toLowerCase()} available
+        </div>
+      );
+    }
+
+    // Get selected items for display
+    const selectedItems = availableItems.filter((item) =>
+      selectedValues.includes(item.id)
+    );
+
+    // Filter available items based on search and exclude already selected
+    const filteredItems = availableItems.filter((item) => {
+      const itemName = item.fieldData?.name || item.name || `Item ${item.id}`;
+      const matchesSearch = itemName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const notSelected = !selectedValues.includes(item.id);
+      return matchesSearch && notSelected;
+    });
+
+    return (
+      <div style={{ position: "relative" }}>
+        {/* Dropdown Trigger with Tags Inside */}
+        <div
+          onClick={() => toggleDropdown(field.slug)}
+          style={{
+            padding: selectedItems.length > 0 ? "8px 12px" : "12px 16px",
+            border: fieldError ? "1px solid #ef4444" : "1px solid #d1d5db",
+            borderRadius: "6px",
+            backgroundColor: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "6px",
+            minHeight: "40px",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Selected Items Tags Inside Field */}
+          {selectedItems.length > 0 ? (
+            <>
+              {selectedItems.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "16px",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    gap: "4px",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <span>
+                    {item.fieldData?.name || item.name || `Item ${item.id}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSelectedItem(field.slug, item.id);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "16px",
+                      height: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%",
+                      fontSize: "14px",
+                      lineHeight: "1",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {/* Spacer to push arrow to the right */}
+              <div style={{ flex: 1 }}></div>
+            </>
+          ) : (
+            <span
+              style={{
+                color: "#9ca3af",
+                fontSize: "14px",
+                flex: 1,
+              }}
+            >
+              Select {field.displayName.toLowerCase()}
+            </span>
+          )}
+
+          {/* Dropdown Arrow */}
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#6b7280",
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+              marginLeft: "8px",
+            }}
+          >
+            ▼
+          </span>
+        </div>
+
+        {/* Dropdown Content */}
+        {isOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              backgroundColor: "#fff",
+              border: "1px solid #d1d5db",
+              borderRadius: "6px",
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+              zIndex: 1000,
+              maxHeight: "300px",
+              overflowY: "auto",
+              marginTop: "4px",
+            }}
+          >
+            {/* Search Input */}
+            <div style={{ padding: "12px", borderBottom: "1px solid #e5e7eb" }}>
+              <input
+                type="text"
+                placeholder={`Search ${field.displayName.toLowerCase()}...`}
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(field.slug, e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Available Items */}
+            <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      handleMultiReferenceChange(field.slug, item.id, true);
+                      handleSearchChange(field.slug, ""); // Clear search after selection
+                    }}
+                    style={{
+                      padding: "12px 16px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f3f4f6",
+                      transition: "background-color 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "#f9fafb";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "14px",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      {item.fieldData?.name || item.name || `Item ${item.id}`}
+                    </div>
+                    {item.fieldData?.description && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#6b7280",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {item.fieldData.description.length > 80
+                          ? `${item.fieldData.description.substring(0, 80)}...`
+                          : item.fieldData.description}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div
+                  style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    color: "#6b7280",
+                    fontSize: "14px",
+                  }}
+                >
+                  {searchTerm
+                    ? "No items match your search"
+                    : "No more items to select"}
+                </div>
+              )}
+            </div>
+
+            {/* Footer with count */}
+            <div
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#f9fafb",
+                borderTop: "1px solid #e5e7eb",
+                fontSize: "12px",
+                color: "#6b7280",
+                textAlign: "center",
+              }}
+            >
+              {selectedItems.length} of {availableItems.length} selected
+            </div>
+          </div>
+        )}
+
+        {/* Click outside to close dropdown */}
+        {isOpen && (
+          <div
+            onClick={() => toggleDropdown(field.slug)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999,
+            }}
+          />
+        )}
+      </div>
+    );
   };
 
   // Render form field based on type
@@ -716,6 +855,11 @@ const PerkForm = () => {
       width: "100%",
       boxSizing: "border-box",
     };
+
+    // Handle MultiReference fields
+    if (field.type === "MultiReference") {
+      return renderMultiReferenceField(field);
+    }
 
     switch (field.type) {
       case "PlainText":
@@ -909,74 +1053,11 @@ const PerkForm = () => {
   const loading = creating || updating || fetching || schemaLoading;
   const apiError = createError || updateError || fetchError;
 
-  // Styles
-  const containerStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-  };
-
-  const formSectionStyle = {
-    backgroundColor: "#ffffff",
-    padding: "24px",
-    marginBottom: "24px",
-    borderRadius: "8px",
-    border: "1px solid #e5e7eb",
-  };
-
-  const sectionTitleStyle = {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: "16px",
-    paddingBottom: "8px",
-    borderBottom: "2px solid #e5e7eb",
-  };
-
-  const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "16px",
-  };
-
-  const fieldStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  };
-
-  const labelStyle = {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#374151",
-  };
-
-  const buttonStyle = {
-    padding: "12px 24px",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    border: "none",
-    transition: "background-color 0.2s",
-  };
-
-  const primaryButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-  };
-
-  const secondaryButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: "#6b7280",
-    color: "#ffffff",
-  };
-
+  // Add missing errorStyle definition
   const errorStyle = {
     color: "#ef4444",
     fontSize: "12px",
-    marginTop: "2px",
+    marginTop: "4px",
   };
 
   // Loading state for schema or edit mode
@@ -1047,14 +1128,14 @@ const PerkForm = () => {
             }}
           >
             {isEdit
-              ? `Edit ${collectionSchema.singularName}`
-              : `Add New ${collectionSchema.singularName}`}
+              ? `Edit ${collectionSchema?.singularName}`
+              : `Add New ${collectionSchema?.singularName}`}
           </h2>
         </div>
         <p style={{ color: "#6b7280", fontSize: "16px" }}>
           {isEdit
-            ? `Update ${collectionSchema.singularName.toLowerCase()} information`
-            : `Create a new ${collectionSchema.singularName.toLowerCase()} for your collection`}
+            ? `Update ${collectionSchema?.singularName?.toLowerCase()} information`
+            : `Create a new ${collectionSchema?.singularName?.toLowerCase()} for your collection`}
         </p>
       </div>
 
@@ -1346,6 +1427,34 @@ const PerkForm = () => {
           </div>
         )}
 
+        {/* References */}
+        {fieldCategories.references.length > 0 && (
+          <div style={formSectionStyle}>
+            <h3 style={sectionTitleStyle}>References</h3>
+            <div style={gridStyle}>
+              {fieldCategories.references.map((field) => (
+                <div key={field.id} style={fieldStyle}>
+                  <label style={labelStyle}>
+                    {field.displayName}
+                    {field.isRequired && (
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                  {field.helpText && (
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {field.helpText}
+                    </span>
+                  )}
+                  {errors[field.slug] && (
+                    <div style={errorStyle}>{errors[field.slug]}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Other Fields */}
         {fieldCategories.other.length > 0 && (
           <div style={formSectionStyle}>
@@ -1399,8 +1508,8 @@ const PerkForm = () => {
               {loading
                 ? "Saving..."
                 : isEdit
-                  ? `Update ${collectionSchema.singularName}`
-                  : `Create ${collectionSchema.singularName}`}
+                  ? `Update ${collectionSchema?.singularName}`
+                  : `Create ${collectionSchema?.singularName}`}
             </button>
           </div>
         </div>
