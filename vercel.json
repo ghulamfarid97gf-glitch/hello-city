@@ -1,7 +1,7 @@
 {
     "functions": {
-      "api/webflow.js": {
-        "runtime": "@vercel/node"
+      "api/*.js": {
+        "runtime": "@vercel/node@18.x"
       }
     }
   }
