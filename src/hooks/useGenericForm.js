@@ -1,5 +1,10 @@
 // services/webflow/useGenericForm.js
-import { useCreatePerk, useUpdatePerk, usePerk } from "./useWebflow";
+
+import {
+  useCreatePerk,
+  usePerk,
+  useUpdatePerk,
+} from "../services/webflow/useWebflow";
 
 export const useGenericForm = (collectionType, collectionId) => {
   // Map collection types to their respective hooks

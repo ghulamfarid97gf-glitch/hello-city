@@ -1,12 +1,13 @@
 // API configuration and base setup
 import axios from "axios";
 
+const LOCAL_SERVER_PROXY_URL = "/api/webflow";
+const WEB_FLOW_BASE_URL = "https://api.webflow.com/v2";
+
 // Base API configuration
 const API_CONFIG = {
   WEBFLOW: {
-    BASE_URL: "https://api.webflow.com/v2",
-    // "/api/webflow",
-
+    BASE_URL: LOCAL_SERVER_PROXY_URL,
     TIMEOUT: 10000,
     HEADERS: {
       "Content-Type": "application/json",
@@ -22,18 +23,11 @@ const webflowAPI = axios.create({
   headers: API_CONFIG.WEBFLOW.HEADERS,
 });
 
-// Request interceptor for authentication
+// Request interceptor - REMOVE TOKEN FROM HERE since it's now handled by the proxy
 webflowAPI.interceptors.request.use(
   (config) => {
-    const token =
-      "62ad3ed6e55b0370ab557d5b3d7b5c957afbeed6f158df3303e8fb0e516d0505";
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.error("❌ No API token found! Check your .env file");
-    }
-
+    // Remove the token assignment since the proxy handles authentication
+    // The proxy will add the Authorization header
     return config;
   },
   (error) => {
@@ -42,10 +36,9 @@ webflowAPI.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for error handling (keep as is)
 webflowAPI.interceptors.response.use(
   (response) => {
-    // Log response in development
     return response;
   },
   (error) => {
@@ -56,7 +49,6 @@ webflowAPI.interceptors.response.use(
       url: error.config?.url,
     });
 
-    // Handle common error scenarios
     if (error.response?.status === 401) {
       console.error("Authentication failed. Please check your API token.");
     } else if (error.response?.status === 404) {

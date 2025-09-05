@@ -24,7 +24,7 @@ const COLLECTIONS = {
   PERKS: "689046505062d22cb6485ac6",
 };
 
-const PerkForm = ({ collectionId, collectionName }) => {
+const PerkForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -36,7 +36,7 @@ const PerkForm = ({ collectionId, collectionName }) => {
     perk,
     loading: fetching,
     error: fetchError,
-  } = usePerk(collectionId, id, isEdit);
+  } = usePerk(COLLECTIONS.PERKS, id, isEdit);
 
   // Use collections hook to get items from the collection
   const {
@@ -44,7 +44,7 @@ const PerkForm = ({ collectionId, collectionName }) => {
     loading: fieldsLoading,
     error,
     refetch,
-  } = useCollectionFields(collectionId, true);
+  } = useCollectionFields(COLLECTIONS.PERKS, true);
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -418,16 +418,14 @@ const PerkForm = ({ collectionId, collectionName }) => {
 
       let result;
       if (isEdit) {
-        result = await updatePerk(collectionId, id, processedFormData);
+        result = await updatePerk(COLLECTIONS.PERKS, id, processedFormData);
       } else {
-        result = await createPerk(collectionId, processedFormData);
+        result = await createPerk(COLLECTIONS.PERKS, processedFormData);
       }
 
       if (result.success) {
         toast.success(
-          isEdit
-            ? `${collectionName} updated successfully`
-            : `${collectionName} created successfully`
+          isEdit ? "Perk updated successfully" : "Perk created successfully"
         );
         navigate("/");
       } else {
