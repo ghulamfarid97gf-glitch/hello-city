@@ -13,15 +13,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log("=== REQUEST DEBUG ===");
-    console.log("req.query:", req.query);
+    console.log("=== SIMPLE FUNCTION DEBUG ===");
     console.log("req.url:", req.url);
+    console.log("req.query:", req.query);
 
-    // Get path segments from query
-    const { path } = req.query;
+    // Get the path from the 'path' query parameter (set by vercel.json rewrite)
+    const pathParam = req.query.path;
 
     // Handle root case
-    if (!path || path.length === 0) {
+    if (!pathParam) {
       return res.status(200).json({
         message: "Webflow API Proxy is working!",
         usage: "Use /api/webflow/collections/{collectionId}/items",
@@ -29,9 +29,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Reconstruct the path
-    const webflowPath = Array.isArray(path) ? `/${path.join("/")}` : `/${path}`;
-    console.log("Webflow path:", webflowPath);
+    // Construct the Webflow path
+    const webflowPath = `/${pathParam}`;
+    console.log("webflowPath:", webflowPath);
 
     const webflowUrl = `https://api.webflow.com/v2${webflowPath}`;
     console.log("Final Webflow URL:", webflowUrl);
@@ -56,8 +56,8 @@ export default async function handler(req, res) {
       error: "Internal server error",
       message: error.message,
       debug: {
-        query: req.query,
         url: req.url,
+        query: req.query,
       },
     });
   }

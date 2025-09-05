@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+      {
+        "source": "/api/webflow/(.*)",
+        "destination": "/api/webflow?path=$1"
+      }
+    ]
+  }
