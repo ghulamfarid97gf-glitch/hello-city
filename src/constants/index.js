@@ -177,3 +177,39 @@ export const PLAN_WISE_COUPONS = [
   { value: "free-plans", label: "Free Plans" },
   { value: "paid-plans", label: "Paid Plans" },
 ];
+
+export const displayArray = [
+  // 👉 Perk-related fields moved to the start
+  { name: "Perk Name" },
+  { "location-address": "Perk Location" },
+  { "video-link-text": "video Link" },
+  { "start-date": "Start Date" },
+  { "end-date": "End Date" },
+  { offers: "offers" },
+  { places: "Places" },
+  { location: "Location / Venue / Place name" },
+
+  // 👉 Remaining fields
+  { "plan-wise-coupen": "Plan Wise Coupen" },
+  { "video-thumbnail-link": "video-thumbnail-link" },
+  { "thumbnail-image": "Thumbnail Image (Open Graph Search)" },
+  { "offer-on-tickets-for-elite-members": "Offer (for Elite Members)" },
+  { "how-much-save-for-elite-member": "Save (For Elite Member)" },
+  { "offer-description-elite-member": "Perk destinations (For Elite Member)" },
+  { "new-price-for-elite-member": "New Price (For Elite Member)" },
+  { "cutoff-value-for-elite-member": "Value of perks (for Elite Member)" },
+  { "offer-on-tickets-for-free-members": "Offer (for Free Members)" },
+  { "how-much-save-for-free-member": "Save (For Free Member)" },
+  { "cutoff-value-for-free-member": "Value of perks (for Free Member)" },
+  { "new-price-for-free-member": "New Price (for Free Member)" },
+  { "offer-description-free-member": "Perk destinations (Free Member)" },
+  { slug: "Slug" },
+
+  // 👉 Event-related fields grouped at the end
+  { "event-name": "Event Name" },
+  { description: "Event Description" },
+  { "booking-link": "Booking Link" },
+  { "event-link": "Event Link" },
+  { when: "When?" },
+  { "event-time": "Event Time" },
+];

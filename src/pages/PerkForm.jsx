@@ -39,12 +39,48 @@ const PerkForm = () => {
   } = usePerk(COLLECTIONS.PERKS, id, isEdit);
 
   // Use collections hook to get items from the collection
-  const {
-    collectionsFields,
-    loading: fieldsLoading,
-    error,
-    refetch,
-  } = useCollectionFields(COLLECTIONS.PERKS, true);
+  const { collectionsFields, loading: fieldsLoading } = useCollectionFields(
+    COLLECTIONS.PERKS,
+    true
+  );
+
+  const removedFileds = ["plan-wise-coupen", "slug", "location"];
+
+  // Custom display sequence - matching the table sequence but excluding slug
+  const formFieldSequence = [
+    // Perk-related fields at the start
+    "name",
+    "location-address",
+    "video-link-text",
+    "start-date",
+    "end-date",
+    "offers",
+    "places",
+
+    // Remaining fields
+    "video-thumbnail-link",
+    "thumbnail-image",
+    "offer-on-tickets-for-elite-members",
+    "how-much-save-for-elite-member",
+    "offer-description-elite-member",
+    "new-price-for-elite-member",
+    "cutoff-value-for-elite-member",
+    "offer-on-tickets-for-free-members",
+    "how-much-save-for-free-member",
+    "cutoff-value-for-free-member",
+    "new-price-for-free-member",
+    "offer-description-free-member",
+
+    // Note: "slug" excluded as it will be auto-generated
+
+    // Event-related fields grouped at the end
+    "event-name",
+    "description",
+    "booking-link",
+    "event-link",
+    "when",
+    "event-time",
+  ];
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -99,6 +135,11 @@ const PerkForm = () => {
         };
 
         schema?.fields?.forEach((field) => {
+          // Skip slug field as it will be auto-generated
+          if (field.slug === "slug") {
+            return;
+          }
+
           let defaultValue;
 
           switch (field.type) {
@@ -145,6 +186,11 @@ const PerkForm = () => {
 
       // Process complex field types for edit mode
       collectionSchema?.fields?.forEach((field) => {
+        // Skip slug field processing
+        if (field.slug === "slug") {
+          return;
+        }
+
         const fieldValue = processedFieldData[field.slug];
 
         if (fieldValue) {
@@ -202,6 +248,72 @@ const PerkForm = () => {
     }
   }, [perk, isEdit, collectionSchema, fieldsLoading]);
 
+  // Get ordered fields based on custom sequence
+  const getOrderedFields = () => {
+    if (!collectionSchema?.fields) return [];
+
+    const fieldsMap = {};
+    collectionSchema.fields.forEach((field) => {
+      fieldsMap[field.slug] = field;
+    });
+
+    const orderedFields = [];
+
+    // First, add fields in the specified sequence order
+    formFieldSequence.forEach((slug) => {
+      if (fieldsMap[slug]) {
+        orderedFields.push(fieldsMap[slug]);
+        delete fieldsMap[slug]; // Remove from map to avoid duplicates
+      }
+    });
+
+    // Then add any remaining fields that weren't in the sequence (excluding slug)
+    Object.values(fieldsMap).forEach((field) => {
+      if (!removedFileds.includes(field.slug)) {
+        orderedFields.push(field);
+      }
+    });
+
+    return orderedFields;
+  };
+
+  // Group fields by logical sections while maintaining sequence
+  const getFieldsBySequencedCategories = () => {
+    const orderedFields = getOrderedFields();
+
+    const categories = {
+      primary: [], // name, location-address, video-link-text
+      dates: [], // start-date, end-date
+      references: [], // offers, places
+      location: [], // location
+      general: [], // plan-wise-coupen, video-thumbnail-link, thumbnail-image
+      elite: [], // elite member fields
+      free: [], // free member fields
+      event: [], // event-related fields
+    };
+
+    orderedFields.forEach((field) => {
+      const slug = field.slug.toLowerCase();
+
+      if (slug.includes("elite")) {
+        categories.elite.push(field);
+      } else if (slug.includes("free")) {
+        categories.free.push(field);
+      } else if (
+        slug.includes("event") ||
+        slug === "when" ||
+        slug === "description" ||
+        slug === "booking-link"
+      ) {
+        categories.event.push(field);
+      } else {
+        categories.general.push(field);
+      }
+    });
+
+    return categories;
+  };
+
   // Dynamic validation based on schema
   const validateForm = () => {
     if (!collectionSchema) return false;
@@ -209,6 +321,11 @@ const PerkForm = () => {
     const newErrors = {};
 
     collectionSchema?.fields?.forEach((field) => {
+      // Skip validation for slug field
+      if (field.slug === "slug") {
+        return;
+      }
+
       const value = formData[field.slug];
 
       // Required field validation
@@ -377,6 +494,11 @@ const PerkForm = () => {
 
       if (collectionSchema) {
         collectionSchema?.fields?.forEach((field) => {
+          // Skip processing slug field
+          if (field.slug === "slug") {
+            return;
+          }
+
           const fieldValue = processedFormData[field.slug];
 
           if (fieldValue) {
@@ -447,69 +569,6 @@ const PerkForm = () => {
     } catch {
       return "";
     }
-  };
-
-  // Group fields by categories for better organization
-  const getFieldsByCategory = () => {
-    if (!collectionSchema) return {};
-
-    const categories = {
-      basic: [],
-      descriptions: [],
-      location: [],
-      pricing: [],
-      dates: [],
-      links: [],
-      media: [],
-      references: [],
-      other: [],
-    };
-
-    collectionSchema?.fields?.forEach((field) => {
-      const slug = field.slug.toLowerCase();
-
-      if (
-        [
-          "name",
-          "perk-name",
-          "perk-title",
-          "slug",
-          "type-of-perk",
-          "member-role",
-        ].includes(slug)
-      ) {
-        categories.basic.push(field);
-      } else if (slug.includes("description")) {
-        categories.descriptions.push(field);
-      } else if (
-        slug.includes("location") ||
-        slug.includes("place") ||
-        slug === "time" ||
-        slug === "event-name"
-      ) {
-        categories.location.push(field);
-      } else if (
-        slug.includes("price") ||
-        slug.includes("save") ||
-        slug.includes("pay") ||
-        slug.includes("percent") ||
-        slug.includes("coupen")
-      ) {
-        categories.pricing.push(field);
-      } else if (slug.includes("date")) {
-        categories.dates.push(field);
-      } else if (slug.includes("link")) {
-        categories.links.push(field);
-      } else if (field.type === "Image" || field.type === "VideoLink") {
-        categories.media.push(field);
-      } else if (field.type === "MultiReference") {
-        categories.references.push(field);
-      } else {
-        categories.other.push(field);
-      }
-    });
-
-    return categories;
   };
 
   // State for dropdown management
@@ -1101,7 +1160,7 @@ const PerkForm = () => {
     );
   }
 
-  const fieldCategories = getFieldsByCategory();
+  const fieldCategories = getFieldsBySequencedCategories();
 
   return (
     <div style={containerStyle}>
@@ -1134,6 +1193,9 @@ const PerkForm = () => {
           {isEdit
             ? `Update ${collectionSchema?.singularName?.toLowerCase()} information`
             : `Create a new ${collectionSchema?.singularName?.toLowerCase()} for your collection`}
+        </p>
+        <p style={{ color: "#9ca3af", fontSize: "14px", fontStyle: "italic" }}>
+          Note: Slug will be automatically generated based on the perk name
         </p>
       </div>
 
@@ -1228,97 +1290,12 @@ const PerkForm = () => {
           </div>
         </div>
 
-        {/* Dynamic Form Sections */}
-        {/* Basic Information */}
-        {fieldCategories.basic.length > 0 && (
+        {/* Primary Fields - Following exact sequence */}
+        {fieldCategories.primary.length > 0 && (
           <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Basic Information</h3>
+            <h3 style={sectionTitleStyle}>Primary Information</h3>
             <div style={gridStyle}>
-              {fieldCategories.basic.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Descriptions */}
-        {fieldCategories.descriptions.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Descriptions</h3>
-            <div style={gridStyle}>
-              {fieldCategories.descriptions.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Location & Event */}
-        {fieldCategories.location.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Location & Event Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.location.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pricing Information */}
-        {fieldCategories.pricing.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Pricing Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.pricing.map((field) => (
+              {fieldCategories.primary.map((field) => (
                 <div key={field.id} style={fieldStyle}>
                   <label style={labelStyle}>
                     {field.displayName}
@@ -1369,66 +1346,10 @@ const PerkForm = () => {
           </div>
         )}
 
-        {/* Links */}
-        {fieldCategories.links.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Links</h3>
-            <div style={gridStyle}>
-              {fieldCategories.links.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Media */}
-        {fieldCategories.media.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Media</h3>
-            <div style={gridStyle}>
-              {fieldCategories.media.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* References */}
+        {/* References (Offers, Places) */}
         {fieldCategories.references.length > 0 && (
           <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>References</h3>
+            <h3 style={sectionTitleStyle}>Associated References</h3>
             <div style={gridStyle}>
               {fieldCategories.references.map((field) => (
                 <div key={field.id} style={fieldStyle}>
@@ -1453,12 +1374,128 @@ const PerkForm = () => {
           </div>
         )}
 
-        {/* Other Fields */}
-        {fieldCategories.other.length > 0 && (
+        {/* Location */}
+        {fieldCategories.location.length > 0 && (
           <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Additional Information</h3>
+            <h3 style={sectionTitleStyle}>Location Information</h3>
             <div style={gridStyle}>
-              {fieldCategories.other.map((field) => (
+              {fieldCategories.location.map((field) => (
+                <div key={field.id} style={fieldStyle}>
+                  <label style={labelStyle}>
+                    {field.displayName}
+                    {field.isRequired && (
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                  {field.helpText && (
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {field.helpText}
+                    </span>
+                  )}
+                  {errors[field.slug] && (
+                    <div style={errorStyle}>{errors[field.slug]}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* General Fields */}
+        {fieldCategories.general.length > 0 && (
+          <div style={formSectionStyle}>
+            <h3 style={sectionTitleStyle}>Perk Detail</h3>
+            <div style={gridStyle}>
+              {fieldCategories.general.map((field) => (
+                <div key={field.id} style={fieldStyle}>
+                  <label style={labelStyle}>
+                    {field.displayName}
+                    {field.isRequired && (
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                  {field.helpText && (
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {field.helpText}
+                    </span>
+                  )}
+                  {errors[field.slug] && (
+                    <div style={errorStyle}>{errors[field.slug]}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Elite Member Offers */}
+        {fieldCategories.elite.length > 0 && (
+          <div style={formSectionStyle}>
+            <h3 style={sectionTitleStyle}>
+              Elite Member Offers (Perk Listings Details)
+            </h3>
+            <div style={gridStyle}>
+              {fieldCategories.elite.map((field) => (
+                <div key={field.id} style={fieldStyle}>
+                  <label style={labelStyle}>
+                    {field.displayName}
+                    {field.isRequired && (
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                  {field.helpText && (
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {field.helpText}
+                    </span>
+                  )}
+                  {errors[field.slug] && (
+                    <div style={errorStyle}>{errors[field.slug]}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Free Member Offers */}
+        {fieldCategories.free.length > 0 && (
+          <div style={formSectionStyle}>
+            <h3 style={sectionTitleStyle}>
+              Free Member Offers (Perk Listings Details)
+            </h3>
+            <div style={gridStyle}>
+              {fieldCategories.free.map((field) => (
+                <div key={field.id} style={fieldStyle}>
+                  <label style={labelStyle}>
+                    {field.displayName}
+                    {field.isRequired && (
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                  {field.helpText && (
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {field.helpText}
+                    </span>
+                  )}
+                  {errors[field.slug] && (
+                    <div style={errorStyle}>{errors[field.slug]}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Event Information */}
+        {fieldCategories.event.length > 0 && (
+          <div style={formSectionStyle}>
+            <h3 style={sectionTitleStyle}>Event Information</h3>
+            <div style={gridStyle}>
+              {fieldCategories.event.map((field) => (
                 <div key={field.id} style={fieldStyle}>
                   <label style={labelStyle}>
                     {field.displayName}

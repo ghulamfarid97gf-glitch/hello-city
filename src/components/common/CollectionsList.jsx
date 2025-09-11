@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCollections } from "../../services/webflow/useWebflow";
+import { useCollectionFields } from "../../services/webflow/useWebflow"; // Add this import
 import webflowService from "../../services/webflow/webflowService";
 import Loading from "./Loading";
 import { toast } from "react-toastify";
 import { collectionsListStyles } from "../../styles/collectionsListStyles.style";
+import { displayArray } from "../../constants";
 
 // Confirmation Modal Component
 const ConfirmationModal = ({
@@ -83,6 +85,33 @@ const CollectionsList = ({ collectionId }) => {
     collectionId,
     true
   );
+
+  // Use collection fields hook to get the schema
+  const {
+    collectionsFields,
+    loading: fieldsLoading,
+    error: fieldsError,
+  } = useCollectionFields(collectionId, true);
+
+  // Create field mapping from slug to display name
+  const fieldMapping = useMemo(() => {
+    if (!collectionsFields?.fields) return {};
+
+    const mapping = {};
+    collectionsFields.fields.forEach((field) => {
+      mapping[field.slug] = field.displayName;
+    });
+
+    // Add core fields that are not in the schema
+    mapping.id = "ID";
+    mapping.isDraft = "Draft Status";
+    mapping.isArchived = "Archived Status";
+    mapping.lastPublished = "Last Published";
+    mapping.lastUpdated = "Last Updated";
+    mapping.createdOn = "Created On";
+
+    return mapping;
+  }, [collectionsFields]);
 
   // Handle delete functionality
   const handleDeleteClick = (perkId) => {
@@ -177,20 +206,11 @@ const CollectionsList = ({ collectionId }) => {
     return "Perks";
   };
 
-  // Pagination logic
-  const totalItems = collections ? collections.length : 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedItems = collections
-    ? collections.slice(startIndex, endIndex)
-    : [];
-
+  // Enhanced table columns generation with custom field ordering
   const getTableColumns = (items) => {
     if (!items || items.length === 0) return [];
 
     const coreFields = [
-      "id",
       "isDraft",
       "isArchived",
       "lastPublished",
@@ -198,36 +218,7 @@ const CollectionsList = ({ collectionId }) => {
       "createdOn",
     ];
 
-    const preferredFieldOrder = [
-      "name",
-      "perk-title",
-      "type-of-perk",
-      "member-role",
-      "original-price",
-      "price-you-pay-hellocity-to-get-it",
-      "percent-off-this-deal-gives-you",
-      "location",
-      "start-date",
-      "end-date",
-      "thumbnail-image",
-      "slug",
-      "perk-name",
-      "small-description",
-      "perks-short-description",
-      "description",
-      "location-address",
-      "point-to-place",
-      "event-name",
-      "time",
-      "how-much-you-save",
-      "how-much-you-would-pay-at-the-place",
-      "plan-wise-coupen",
-      "ticket-link",
-      "location-link",
-      "event-link",
-      "video-link",
-    ];
-
+    // Get field data keys from actual items
     const fieldDataKeys = new Set();
     items.forEach((item) => {
       if (item.fieldData) {
@@ -235,32 +226,41 @@ const CollectionsList = ({ collectionId }) => {
       }
     });
 
-    const orderedFieldDataColumns = [];
-    const availableFieldDataKeys = Array.from(fieldDataKeys);
+    // Start with ID, then follow custom display order
+    const orderedColumns = ["id"];
 
-    preferredFieldOrder.forEach((field) => {
-      if (availableFieldDataKeys.includes(field)) {
-        orderedFieldDataColumns.push(field);
+    // Add fields from displayArray in the specified order if they exist in the data
+    displayArray.forEach((item) => {
+      const slug = Object.keys(item)[0];
+      if (fieldDataKeys.has(slug)) {
+        orderedColumns.push(slug);
       }
     });
 
-    availableFieldDataKeys.forEach((field) => {
-      if (!preferredFieldOrder.includes(field)) {
-        orderedFieldDataColumns.push(field);
+    // Add any remaining fields that might not be in displayArray
+    Array.from(fieldDataKeys).forEach((field) => {
+      if (!orderedColumns.includes(field)) {
+        orderedColumns.push(field);
       }
     });
 
-    return [...orderedFieldDataColumns, ...coreFields];
+    // Add core fields at the end
+    orderedColumns.push(...coreFields);
+
+    return orderedColumns;
   };
 
-  const formatCellValue = (value, key) => {
+  // Enhanced cell value formatting
+  const formatCellValue = (value, key, fieldType = null) => {
     if (value === null || value === undefined) return "-";
 
     if (typeof value === "boolean") {
       return value ? "Yes" : "No";
     }
 
+    // Handle date fields
     if (
+      fieldType === "DateTime" ||
       key.includes("date") ||
       key.includes("Published") ||
       key.includes("Updated") ||
@@ -273,6 +273,7 @@ const CollectionsList = ({ collectionId }) => {
       }
     }
 
+    // Handle object types (images, links, etc.)
     if (typeof value === "object") {
       if (key === "thumbnail-image" && value.url) {
         return value.url;
@@ -280,31 +281,74 @@ const CollectionsList = ({ collectionId }) => {
       if (key === "video-link" && value.url) {
         return value.url;
       }
+      if (fieldType === "Link" && value.url) {
+        return value.url;
+      }
+      if (fieldType === "Image" && value.url) {
+        return value.url;
+      }
+      // Handle multi-reference fields
+      if (Array.isArray(value)) {
+        return `${value.length} item(s)`;
+      }
       return JSON.stringify(value);
     }
 
-    if (typeof value === "string" && value.includes("<")) {
+    // Handle rich text by stripping HTML
+    if (
+      fieldType === "RichText" &&
+      typeof value === "string" &&
+      value.includes("<")
+    ) {
       return value.replace(/<[^>]*>/g, "").substring(0, 100) + "...";
+    }
+
+    // Handle long text content
+    if (typeof value === "string" && value.length > 100) {
+      return value.substring(0, 100) + "...";
     }
 
     return String(value);
   };
 
+  // Get field type for better formatting
+  const getFieldType = (fieldSlug) => {
+    if (!collectionsFields?.fields) return null;
+    const field = collectionsFields.fields.find((f) => f.slug === fieldSlug);
+    return field?.type || null;
+  };
+
   const getCellValue = (item, column) => {
-    if (
-      [
-        "id",
-        "isDraft",
-        "isArchived",
-        "lastPublished",
-        "lastUpdated",
-        "createdOn",
-      ].includes(column)
-    ) {
+    const coreFields = [
+      "id",
+      "isDraft",
+      "isArchived",
+      "lastPublished",
+      "lastUpdated",
+      "createdOn",
+    ];
+
+    if (coreFields.includes(column)) {
       return formatCellValue(item[column], column);
     }
-    return formatCellValue(item.fieldData?.[column], column);
+
+    const fieldType = getFieldType(column);
+    return formatCellValue(item.fieldData?.[column], column, fieldType);
   };
+
+  // Get display name for column header
+  const getColumnDisplayName = (column) => {
+    return fieldMapping[column] || column;
+  };
+
+  // Pagination logic
+  const totalItems = collections ? collections.length : 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedItems = collections
+    ? collections.slice(startIndex, endIndex)
+    : [];
 
   return (
     <div style={collectionsListStyles.containerStyle}>
@@ -329,6 +373,18 @@ const CollectionsList = ({ collectionId }) => {
             <p style={collectionsListStyles.subtitleStyle}>
               Collection ID: {collectionId}
             </p>
+            {collectionsFields && (
+              <p
+                style={{
+                  ...collectionsListStyles.subtitleStyle,
+                  fontSize: "12px",
+                  marginTop: "4px",
+                }}
+              >
+                Schema: {collectionsFields.displayName} (
+                {collectionsFields.fields?.length || 0} fields)
+              </p>
+            )}
           </div>
           <button
             style={collectionsListStyles.buttonStyle}
@@ -381,15 +437,17 @@ const CollectionsList = ({ collectionId }) => {
       )}
 
       {/* Loading State */}
-      {loading && <Loading text="Loading data..." />}
+      {(loading || fieldsLoading) && <Loading text="Loading data..." />}
 
       {/* Error State */}
-      {error && (
+      {(error || fieldsError) && (
         <div style={collectionsListStyles.errorContainerStyle}>
           <h3 style={collectionsListStyles.errorTitleStyle}>
             Error loading {getCollectionType().toLowerCase()}
           </h3>
-          <p style={collectionsListStyles.errorMessageStyle}>{error.message}</p>
+          <p style={collectionsListStyles.errorMessageStyle}>
+            {error?.message || fieldsError?.message}
+          </p>
           <button
             style={collectionsListStyles.errorButtonStyle}
             onClick={() => {
@@ -409,27 +467,31 @@ const CollectionsList = ({ collectionId }) => {
       )}
 
       {/* No Data State */}
-      {!loading && !error && (!collections || collections.length === 0) && (
-        <div style={collectionsListStyles.noDataContainerStyle}>
-          <div style={collectionsListStyles.noDataIconStyle}>📋</div>
-          <h3 style={collectionsListStyles.noDataTitleStyle}>
-            No {getCollectionType().toLowerCase()} found
-          </h3>
-          <p style={collectionsListStyles.noDataMessageStyle}>
-            Get started by creating your first{" "}
-            {getCollectionType().toLowerCase().slice(0, -1)}
-          </p>
-          <button
-            style={collectionsListStyles.buttonStyle}
-            onClick={handleAddNew}
-          >
-            Create First {getCollectionType().slice(0, -1)}
-          </button>
-        </div>
-      )}
+      {!loading &&
+        !fieldsLoading &&
+        !error &&
+        !fieldsError &&
+        (!collections || collections.length === 0) && (
+          <div style={collectionsListStyles.noDataContainerStyle}>
+            <div style={collectionsListStyles.noDataIconStyle}>📋</div>
+            <h3 style={collectionsListStyles.noDataTitleStyle}>
+              No {getCollectionType().toLowerCase()} found
+            </h3>
+            <p style={collectionsListStyles.noDataMessageStyle}>
+              Get started by creating your first{" "}
+              {getCollectionType().toLowerCase().slice(0, -1)}
+            </p>
+            <button
+              style={collectionsListStyles.buttonStyle}
+              onClick={handleAddNew}
+            >
+              Create First {getCollectionType().slice(0, -1)}
+            </button>
+          </div>
+        )}
 
       {/* Table */}
-      {collections && collections.length > 0 && (
+      {collections && collections.length > 0 && collectionsFields && (
         <div style={collectionsListStyles.tableContainerStyle}>
           <div style={collectionsListStyles.tableHeaderStyle}>
             <h3 style={collectionsListStyles.tableHeaderTitleStyle}>
@@ -457,9 +519,9 @@ const CollectionsList = ({ collectionId }) => {
                   })
                 }
                 onClick={handleRefetch}
-                disabled={loading}
+                disabled={loading || fieldsLoading}
               >
-                {loading ? "Refreshing..." : "Refresh"}
+                {loading || fieldsLoading ? "Refreshing..." : "Refresh"}
               </button>
             </div>
           </div>
@@ -473,8 +535,9 @@ const CollectionsList = ({ collectionId }) => {
                       <th
                         key={column}
                         style={collectionsListStyles.tableHeaderCellStyle}
+                        title={`Field: ${column} | Type: ${getFieldType(column) || "Core Field"}`}
                       >
-                        {column}
+                        {getColumnDisplayName(column)}
                       </th>
                     ))}
                     <th style={collectionsListStyles.stickyActionHeaderStyle}>
@@ -602,7 +665,7 @@ const CollectionsList = ({ collectionId }) => {
             </div>
 
             {/* Table Loading Overlay */}
-            {loading && (
+            {(loading || fieldsLoading) && (
               <div style={collectionsListStyles.loadingOverlayStyle}>
                 <div style={collectionsListStyles.loadingContentStyle}>
                   <div style={collectionsListStyles.spinnerStyle}></div>

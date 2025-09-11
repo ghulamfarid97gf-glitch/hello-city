@@ -32,12 +32,14 @@ export const fieldStyle = {
   display: "flex",
   flexDirection: "column",
   gap: "4px",
+  marginTop: "5px",
 };
 
 export const labelStyle = {
   fontSize: "14px",
   fontWeight: "500",
   color: "#374151",
+  textAlign: "left",
 };
 
 export const buttonStyle = {
