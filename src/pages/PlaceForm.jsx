@@ -24,6 +24,15 @@ const COLLECTIONS = {
   PLACES: "688b15b04ee8c4d17f71c5c3",
 };
 
+const removedFields = ["slug"];
+
+const FIELD_ORDER = [
+  "name",
+  "event-description",
+  "location-address",
+  "location-link",
+];
+
 const PlaceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,8 +52,6 @@ const PlaceForm = () => {
     COLLECTIONS.PLACES,
     true
   );
-
-  const removedFields = ["slug"];
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -188,12 +195,38 @@ const PlaceForm = () => {
   }, [perk, isEdit, collectionSchema, fieldsLoading]);
 
   // Get fields that aren't in the removed list
+  // Get fields that aren't in the removed list
   const getAvailableFields = () => {
     if (!collectionSchema?.fields) return [];
 
-    return collectionSchema.fields.filter(
+    // Filter out removed fields first
+    const filteredFields = collectionSchema.fields.filter(
       (field) => !removedFields.includes(field.slug)
     );
+
+    // Separate fields into ordered and unordered
+    const orderedFields = [];
+    const unorderedFields = [];
+
+    filteredFields.forEach((field) => {
+      const orderIndex = FIELD_ORDER.indexOf(field.slug);
+      if (orderIndex !== -1) {
+        // Field is in the order list, add it with its order index
+        orderedFields.push({ field, orderIndex });
+      } else {
+        // Field is not in the order list, add it to unordered
+        unorderedFields.push(field);
+      }
+    });
+
+    // Sort ordered fields by their index in the FIELD_ORDER array
+    orderedFields.sort((a, b) => a.orderIndex - b.orderIndex);
+
+    // Extract just the field objects from ordered fields
+    const sortedOrderedFields = orderedFields.map((item) => item.field);
+
+    // Combine ordered fields first, then unordered fields at the end
+    return [...sortedOrderedFields, ...unorderedFields];
   };
 
   // Dynamic validation based on schema
