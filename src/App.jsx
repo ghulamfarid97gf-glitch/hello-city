@@ -2,6 +2,8 @@ import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CollectionPage from "./components/common/CollectionPage";
 import PerkForm from "./pages/PerkForm";
+import OfferForm from "./pages/OfferForm";
+import PlaceForm from "./pages/PlaceForm";
 import Navbar from "./components/common/Navbar";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import { ToastContainer } from "react-toastify";
@@ -24,13 +26,6 @@ const COLLECTIONS = {
     name: "Places",
     description: "Manage locations and venues.",
   },
-};
-
-// Generic Form Component for reusability
-const GenericForm = ({ collectionId, collectionName }) => {
-  return (
-    <PerkForm collectionId={collectionId} collectionName={collectionName} />
-  );
 };
 
 function App() {
@@ -66,24 +61,8 @@ function App() {
                   />
                 }
               />
-              <Route
-                path="/offers/add"
-                element={
-                  <GenericForm
-                    collectionId={COLLECTIONS.OFFERS.id}
-                    collectionName={COLLECTIONS.OFFERS.name}
-                  />
-                }
-              />
-              <Route
-                path="/offers/edit/:id"
-                element={
-                  <GenericForm
-                    collectionId={COLLECTIONS.OFFERS.id}
-                    collectionName={COLLECTIONS.OFFERS.name}
-                  />
-                }
-              />
+              <Route path="/offers/add" element={<OfferForm />} />
+              <Route path="/offers/edit/:id" element={<OfferForm />} />
 
               {/* Places Routes */}
               <Route
@@ -96,24 +75,8 @@ function App() {
                   />
                 }
               />
-              <Route
-                path="/places/add"
-                element={
-                  <GenericForm
-                    collectionId={COLLECTIONS.PLACES.id}
-                    collectionName={COLLECTIONS.PLACES.name}
-                  />
-                }
-              />
-              <Route
-                path="/places/edit/:id"
-                element={
-                  <GenericForm
-                    collectionId={COLLECTIONS.PLACES.id}
-                    collectionName={COLLECTIONS.PLACES.name}
-                  />
-                }
-              />
+              <Route path="/places/add" element={<PlaceForm />} />
+              <Route path="/places/edit/:id" element={<PlaceForm />} />
             </Routes>
           </main>
           <ToastContainer />

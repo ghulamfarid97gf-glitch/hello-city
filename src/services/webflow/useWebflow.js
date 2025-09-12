@@ -83,7 +83,7 @@ export const useCollectionFields = (siteId, autoFetch = true) => {
     }
   }, [fetchCollectionFields, autoFetch, siteId]);
   return {
-    collectionsFields: data || {},
+    collectionsFields: data || null,
     loading,
     error,
     refetch: fetchCollectionFields,

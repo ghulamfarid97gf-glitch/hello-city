@@ -21,10 +21,10 @@ import {
 
 // Constants
 const COLLECTIONS = {
-  PERKS: "689046505062d22cb6485ac6",
+  PLACES: "688b15b04ee8c4d17f71c5c3",
 };
 
-const PerkForm = () => {
+const PlaceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -36,51 +36,15 @@ const PerkForm = () => {
     perk,
     loading: fetching,
     error: fetchError,
-  } = usePerk(COLLECTIONS.PERKS, id, isEdit);
+  } = usePerk(COLLECTIONS.PLACES, id, isEdit);
 
   // Use collections hook to get items from the collection
   const { collectionsFields, loading: fieldsLoading } = useCollectionFields(
-    COLLECTIONS.PERKS,
+    COLLECTIONS.PLACES,
     true
   );
 
-  const removedFileds = ["plan-wise-coupen", "slug", "location"];
-
-  // Custom display sequence - matching the table sequence but excluding slug
-  const formFieldSequence = [
-    // Perk-related fields at the start
-    "name",
-    "location-address",
-    "video-link-text",
-    "start-date",
-    "end-date",
-    "offers",
-    "places",
-
-    // Remaining fields
-    "video-thumbnail-link",
-    "thumbnail-image",
-    "offer-on-tickets-for-elite-members",
-    "how-much-save-for-elite-member",
-    "offer-description-elite-member",
-    "new-price-for-elite-member",
-    "cutoff-value-for-elite-member",
-    "offer-on-tickets-for-free-members",
-    "how-much-save-for-free-member",
-    "cutoff-value-for-free-member",
-    "new-price-for-free-member",
-    "offer-description-free-member",
-
-    // Note: "slug" excluded as it will be auto-generated
-
-    // Event-related fields grouped at the end
-    "event-name",
-    "description",
-    "booking-link",
-    "event-link",
-    "when",
-    "event-time",
-  ];
+  const removedFields = ["slug"];
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -96,52 +60,6 @@ const PerkForm = () => {
   const [multiReferenceData, setMultiReferenceData] = useState({});
   const [multiReferenceLoading, setMultiReferenceLoading] = useState({});
 
-  // Hooks for fetching MultiReference collections
-  const offersCollectionId = "686cd18f382b5b2f1dcc787b";
-  const placesCollectionId = "688b15b04ee8c4d17f71c5c3";
-
-  const { collections: offersData, loading: offersLoading } = useCollections(
-    offersCollectionId,
-    true
-  );
-  const { collections: placesData, loading: placesLoading } = useCollections(
-    placesCollectionId,
-    true
-  );
-
-  // Update multiReferenceData when collections load
-  useEffect(() => {
-    // Only update if the actual data has changed, not just the reference
-    setMultiReferenceData((prevData) => {
-      const newData = {
-        [offersCollectionId]: offersData || [],
-        [placesCollectionId]: placesData || [],
-      };
-
-      // Check if data actually changed before updating
-      const dataChanged =
-        JSON.stringify(prevData[offersCollectionId]) !==
-          JSON.stringify(newData[offersCollectionId]) ||
-        JSON.stringify(prevData[placesCollectionId]) !==
-          JSON.stringify(newData[placesCollectionId]);
-
-      return dataChanged ? newData : prevData;
-    });
-
-    setMultiReferenceLoading((prevLoading) => {
-      const newLoading = {
-        [offersCollectionId]: offersLoading,
-        [placesCollectionId]: placesLoading,
-      };
-
-      // Check if loading state actually changed
-      const loadingChanged =
-        prevLoading[offersCollectionId] !== newLoading[offersCollectionId] ||
-        prevLoading[placesCollectionId] !== newLoading[placesCollectionId];
-
-      return loadingChanged ? newLoading : prevLoading;
-    });
-  }, [offersData, placesData, offersLoading, placesLoading]);
   // Load collection schema on mount
   useEffect(() => {
     const loadCollectionSchema = async (collectionsFields) => {
@@ -200,7 +118,7 @@ const PerkForm = () => {
     }
   }, [collectionsFields]);
 
-  // Load perk data for edit mode
+  // Load place data for edit mode
   useEffect(() => {
     if (perk && isEdit && collectionSchema && !fieldsLoading) {
       const processedFieldData = { ...perk.fieldData };
@@ -269,70 +187,13 @@ const PerkForm = () => {
     }
   }, [perk, isEdit, collectionSchema, fieldsLoading]);
 
-  // Get ordered fields based on custom sequence
-  const getOrderedFields = () => {
+  // Get fields that aren't in the removed list
+  const getAvailableFields = () => {
     if (!collectionSchema?.fields) return [];
 
-    const fieldsMap = {};
-    collectionSchema.fields.forEach((field) => {
-      fieldsMap[field.slug] = field;
-    });
-
-    const orderedFields = [];
-
-    // First, add fields in the specified sequence order
-    formFieldSequence.forEach((slug) => {
-      if (fieldsMap[slug]) {
-        orderedFields.push(fieldsMap[slug]);
-        delete fieldsMap[slug]; // Remove from map to avoid duplicates
-      }
-    });
-
-    // Then add any remaining fields that weren't in the sequence (excluding slug)
-    Object.values(fieldsMap).forEach((field) => {
-      if (!removedFileds.includes(field.slug)) {
-        orderedFields.push(field);
-      }
-    });
-
-    return orderedFields;
-  };
-
-  // Group fields by logical sections while maintaining sequence
-  const getFieldsBySequencedCategories = () => {
-    const orderedFields = getOrderedFields();
-
-    const categories = {
-      primary: [], // name, location-address, video-link-text
-      dates: [], // start-date, end-date
-      references: [], // offers, places
-      location: [], // location
-      general: [], // plan-wise-coupen, video-thumbnail-link, thumbnail-image
-      elite: [], // elite member fields
-      free: [], // free member fields
-      event: [], // event-related fields
-    };
-
-    orderedFields.forEach((field) => {
-      const slug = field.slug.toLowerCase();
-
-      if (slug.includes("elite")) {
-        categories.elite.push(field);
-      } else if (slug.includes("free")) {
-        categories.free.push(field);
-      } else if (
-        slug.includes("event") ||
-        slug === "when" ||
-        slug === "description" ||
-        slug === "booking-link"
-      ) {
-        categories.event.push(field);
-      } else {
-        categories.general.push(field);
-      }
-    });
-
-    return categories;
+    return collectionSchema.fields.filter(
+      (field) => !removedFields.includes(field.slug)
+    );
   };
 
   // Dynamic validation based on schema
@@ -425,23 +286,6 @@ const PerkForm = () => {
           break;
       }
     });
-
-    // Custom business logic validations
-    if (formData["start-date"] && formData["end-date"]) {
-      const startDate = new Date(formData["start-date"]);
-      const endDate = new Date(formData["end-date"]);
-      if (startDate > endDate) {
-        newErrors["end-date"] = "End date must be after start date";
-      }
-    }
-
-    if (formData["percent-off-this-deal-gives-you"]) {
-      const percent = parseFloat(formData["percent-off-this-deal-gives-you"]);
-      if (percent < 0 || percent > 100) {
-        newErrors["percent-off-this-deal-gives-you"] =
-          "Percentage must be between 0 and 100";
-      }
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -561,16 +405,16 @@ const PerkForm = () => {
 
       let result;
       if (isEdit) {
-        result = await updatePerk(COLLECTIONS.PERKS, id, processedFormData);
+        result = await updatePerk(COLLECTIONS.PLACES, id, processedFormData);
       } else {
-        result = await createPerk(COLLECTIONS.PERKS, processedFormData);
+        result = await createPerk(COLLECTIONS.PLACES, processedFormData);
       }
 
       if (result.success) {
         toast.success(
-          isEdit ? "Perk updated successfully" : "Perk created successfully"
+          isEdit ? "Place updated successfully" : "Place created successfully"
         );
-        navigate("/");
+        navigate("/places");
       } else {
         console.error("API Error:", result.error);
         setErrors({
@@ -1065,7 +909,7 @@ const PerkForm = () => {
               <div style={{ marginBottom: "8px" }}>
                 <img
                   src={fieldValue}
-                  alt="Current thumbnail"
+                  alt="Current image"
                   style={{
                     maxWidth: "200px",
                     maxHeight: "150px",
@@ -1144,7 +988,7 @@ const PerkForm = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: "center", padding: "40px" }}>
           <div style={{ fontSize: "16px", color: "#6b7280" }}>
-            {schemaLoading ? "Loading form schema..." : "Loading perk data..."}
+            {schemaLoading ? "Loading form schema..." : "Loading place data..."}
           </div>
         </div>
       </div>
@@ -1159,9 +1003,12 @@ const PerkForm = () => {
           <div
             style={{ fontSize: "16px", color: "#ef4444", marginBottom: "16px" }}
           >
-            Error loading perk: {fetchError.message}
+            Error loading place: {fetchError.message}
           </div>
-          <button onClick={() => navigate("/")} style={secondaryButtonStyle}>
+          <button
+            onClick={() => navigate("/places")}
+            style={secondaryButtonStyle}
+          >
             Back to List
           </button>
         </div>
@@ -1181,7 +1028,7 @@ const PerkForm = () => {
     );
   }
 
-  const fieldCategories = getFieldsBySequencedCategories();
+  const availableFields = getAvailableFields();
 
   return (
     <div style={containerStyle}>
@@ -1194,7 +1041,10 @@ const PerkForm = () => {
             marginBottom: "16px",
           }}
         >
-          <button onClick={() => navigate("/")} style={secondaryButtonStyle}>
+          <button
+            onClick={() => navigate("/places")}
+            style={secondaryButtonStyle}
+          >
             ← Back to List
           </button>
           <h2
@@ -1302,239 +1152,37 @@ const PerkForm = () => {
                 Archived
               </label>
               <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                (Archive this perk)
+                (Archive this place)
               </span>
             </div>
           </div>
         </div>
 
-        {/* Primary Fields - Following exact sequence */}
-        {fieldCategories.primary.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Primary Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.primary.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
+        {/* Place Fields */}
+        <div style={formSectionStyle}>
+          <h3 style={sectionTitleStyle}>Place Information</h3>
+          <div style={gridStyle}>
+            {availableFields.map((field) => (
+              <div key={field.id} style={fieldStyle}>
+                <label style={labelStyle}>
+                  {field.displayName}
+                  {field.isRequired && (
+                    <span style={{ color: "#ef4444" }}> *</span>
                   )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
+                </label>
+                {renderField(field)}
+                {field.helpText && (
+                  <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                    {field.helpText}
+                  </span>
+                )}
+                {errors[field.slug] && (
+                  <div style={errorStyle}>{errors[field.slug]}</div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Date Information */}
-        {fieldCategories.dates.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Date Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.dates.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* References (Offers, Places) */}
-        {fieldCategories.references.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Associated References</h3>
-            <div style={gridStyle}>
-              {fieldCategories.references.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Location */}
-        {fieldCategories.location.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Location Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.location.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* General Fields */}
-        {fieldCategories.general.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Perk Detail</h3>
-            <div style={gridStyle}>
-              {fieldCategories.general.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Elite Member Offers */}
-        {fieldCategories.elite.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>
-              Elite Member Offers (Perk Listings Details)
-            </h3>
-            <div style={gridStyle}>
-              {fieldCategories.elite.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Free Member Offers */}
-        {fieldCategories.free.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>
-              Free Member Offers (Perk Listings Details)
-            </h3>
-            <div style={gridStyle}>
-              {fieldCategories.free.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Event Information */}
-        {fieldCategories.event.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Event Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.event.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Form Actions */}
         <div style={formSectionStyle}>
@@ -1543,7 +1191,7 @@ const PerkForm = () => {
           >
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/places")}
               style={secondaryButtonStyle}
               disabled={loading}
             >
@@ -1571,4 +1219,4 @@ const PerkForm = () => {
   );
 };
 
-export default PerkForm;
+export default PlaceForm;

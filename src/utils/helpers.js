@@ -215,3 +215,43 @@ export const storage = {
     }
   },
 };
+
+/**
+ * Orders fields based on a specified sequence array
+ * @param {Object} collectionSchema - The collection schema containing fields
+ * @param {Array} fieldSequence - Array of field slugs in desired order
+ * @param {Array} removedFields - Array of field slugs to exclude (default: ["slug"])
+ * @returns {Array} Ordered array of field objects
+ */
+export const getOrderedFields = (
+  collectionSchema,
+  fieldSequence = [],
+  removedFields = ["slug"]
+) => {
+  if (!collectionSchema?.fields) return [];
+
+  // Create a map of field slug to field object for easy lookup
+  const fieldsMap = {};
+  collectionSchema.fields.forEach((field) => {
+    fieldsMap[field.slug] = field;
+  });
+
+  const orderedFields = [];
+
+  // First, add fields in the specified sequence order
+  fieldSequence.forEach((slug) => {
+    if (fieldsMap[slug]) {
+      orderedFields.push(fieldsMap[slug]);
+      delete fieldsMap[slug]; // Remove from map to avoid duplicates
+    }
+  });
+
+  // Then add any remaining fields that weren't in the sequence (excluding removed fields)
+  Object.values(fieldsMap).forEach((field) => {
+    if (!removedFields.includes(field.slug)) {
+      orderedFields.push(field);
+    }
+  });
+
+  return orderedFields;
+};
