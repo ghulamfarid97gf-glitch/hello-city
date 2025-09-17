@@ -18,8 +18,8 @@ const COLLECTIONS = {
   },
   OFFERS: {
     id: "686cd18f382b5b2f1dcc787b",
-    name: "Offers",
-    description: "Manage available offers and deals.",
+    name: "Free Offers",
+    description: "Manage available Free offers and deals.",
   },
   PLACES: {
     id: "688b15b04ee8c4d17f71c5c3",

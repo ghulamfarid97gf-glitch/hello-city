@@ -10,7 +10,7 @@ const Navbar = () => {
   const navItems = [
     { name: "Perks", path: "/", collectionId: "689046505062d22cb6485ac6" },
     {
-      name: "Offers",
+      name: "Free Offers",
       path: "/offers",
       collectionId: "686cd18f382b5b2f1dcc787b",
     },
