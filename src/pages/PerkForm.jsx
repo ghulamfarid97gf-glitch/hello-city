@@ -44,7 +44,7 @@ const PerkForm = () => {
     true
   );
 
-  const removedFileds = ["plan-wise-coupen", "slug", "location"];
+  const removedFields = ["plan-wise-coupen", "slug", "location"];
 
   // Custom display sequence - matching the table sequence but excluding slug
   const formFieldSequence = [
@@ -54,8 +54,10 @@ const PerkForm = () => {
     "video-link-text",
     "start-date",
     "end-date",
-    "offers",
     "places",
+    "offers",
+    "free-members-offers",
+    "ellite-members-offers-2",
 
     // Remaining fields
     "video-thumbnail-link",
@@ -70,8 +72,8 @@ const PerkForm = () => {
     "cutoff-value-for-free-member",
     "new-price-for-free-member",
     "offer-description-free-member",
-
-    // Note: "slug" excluded as it will be auto-generated
+    "periorty",
+    "redemption-method",
 
     // Event-related fields grouped at the end
     "event-name",
@@ -92,56 +94,148 @@ const PerkForm = () => {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [schemaLoading, setSchemaLoading] = useState(true);
 
-  // State for MultiReference collections data
+  // State for MultiReference collections data - we'll populate this dynamically
   const [multiReferenceData, setMultiReferenceData] = useState({});
   const [multiReferenceLoading, setMultiReferenceLoading] = useState({});
+  const [multiReferenceCollectionIds, setMultiReferenceCollectionIds] =
+    useState([]);
 
-  // Hooks for fetching MultiReference collections
+  // Extract MultiReference collection IDs from schema
+  useEffect(() => {
+    if (collectionsFields?.fields) {
+      const multiRefIds = collectionsFields.fields
+        .filter(
+          (field) =>
+            field.type === "MultiReference" && field.validations?.collectionId
+        )
+        .map((field) => field.validations.collectionId)
+        .filter((id, index, array) => array.indexOf(id) === index); // Remove duplicates
+
+      setMultiReferenceCollectionIds(multiRefIds);
+    }
+  }, [collectionsFields]);
+
+  // Fixed approach: Fetch collections data using your existing API without dynamic hooks
+  useEffect(() => {
+    if (multiReferenceCollectionIds.length === 0) return;
+
+    const fetchAllCollections = async () => {
+      // Set loading state for all collections
+      const loadingState = {};
+      multiReferenceCollectionIds.forEach((id) => {
+        loadingState[id] = true;
+      });
+      setMultiReferenceLoading(loadingState);
+
+      try {
+        // Since we can't use dynamic hooks, we'll fetch collections using a different approach
+        // You'll need to modify this based on your actual API structure
+        const collectionsPromises = multiReferenceCollectionIds.map(
+          async (collectionId) => {
+            try {
+              // Replace this with your actual API call method
+              // If you have a direct API service method, use that instead
+              const response = await fetch(
+                `/api/webflow/collections/${collectionId}/items`
+              );
+              if (!response.ok) {
+                throw new Error(`Failed to fetch collection ${collectionId}`);
+              }
+              const data = await response.json();
+              return { collectionId, data: data.items || data || [] };
+            } catch (error) {
+              console.error(
+                `Error fetching collection ${collectionId}:`,
+                error
+              );
+              return { collectionId, data: [] };
+            }
+          }
+        );
+
+        const collectionsResults = await Promise.all(collectionsPromises);
+
+        const newData = {};
+        const newLoading = {};
+
+        collectionsResults.forEach(({ collectionId, data }) => {
+          newData[collectionId] = data;
+          newLoading[collectionId] = false;
+        });
+
+        setMultiReferenceData(newData);
+        setMultiReferenceLoading(newLoading);
+      } catch (error) {
+        console.error("Error fetching MultiReference collections:", error);
+        // Set loading to false for all collections on error
+        const errorLoadingState = {};
+        multiReferenceCollectionIds.forEach((id) => {
+          errorLoadingState[id] = false;
+        });
+        setMultiReferenceLoading(errorLoadingState);
+      }
+    };
+
+    fetchAllCollections();
+  }, [multiReferenceCollectionIds]);
+
+  // Alternative approach if you want to use your existing useCollections hook
+  // You would need to conditionally call hooks based on known collection IDs
+  // Here's an example with the known collection IDs from your schema:
+
+  // Known collection IDs from your fields data
   const offersCollectionId = "686cd18f382b5b2f1dcc787b";
+  const nonMemberOffersCollectionId = "68cab08b7569afdf5b23fd30";
+  const eliteMemberOffersCollectionId = "68c9944867e93829d28f767f";
   const placesCollectionId = "688b15b04ee8c4d17f71c5c3";
 
+  // Use your existing hooks for known collections
   const { collections: offersData, loading: offersLoading } = useCollections(
     offersCollectionId,
     true
   );
+  const { collections: nonMemberOffersData, loading: nonMemberOffersLoading } =
+    useCollections(nonMemberOffersCollectionId, true);
+  const {
+    collections: eliteMemberOffersData,
+    loading: eliteMemberOffersLoading,
+  } = useCollections(eliteMemberOffersCollectionId, true);
   const { collections: placesData, loading: placesLoading } = useCollections(
     placesCollectionId,
     true
   );
 
-  // Update multiReferenceData when collections load
+  // Update multiReferenceData when collections load using your existing hooks
   useEffect(() => {
-    // Only update if the actual data has changed, not just the reference
-    setMultiReferenceData((prevData) => {
-      const newData = {
-        [offersCollectionId]: offersData || [],
-        [placesCollectionId]: placesData || [],
-      };
+    const newData = {
+      [offersCollectionId]: offersData || [],
+      [nonMemberOffersCollectionId]: nonMemberOffersData || [],
+      [eliteMemberOffersCollectionId]: eliteMemberOffersData || [],
+      [placesCollectionId]: placesData || [],
+    };
 
-      // Check if data actually changed before updating
-      const dataChanged =
-        JSON.stringify(prevData[offersCollectionId]) !==
-          JSON.stringify(newData[offersCollectionId]) ||
-        JSON.stringify(prevData[placesCollectionId]) !==
-          JSON.stringify(newData[placesCollectionId]);
+    const newLoading = {
+      [offersCollectionId]: offersLoading,
+      [nonMemberOffersCollectionId]: nonMemberOffersLoading,
+      [eliteMemberOffersCollectionId]: eliteMemberOffersLoading,
+      [placesCollectionId]: placesLoading,
+    };
 
-      return dataChanged ? newData : prevData;
-    });
+    setMultiReferenceData(newData);
+    setMultiReferenceLoading(newLoading);
+  }, [
+    offersData,
+    nonMemberOffersData,
+    eliteMemberOffersData,
+    placesData,
+    offersLoading,
+    nonMemberOffersLoading,
+    eliteMemberOffersLoading,
+    placesLoading,
+  ]);
 
-    setMultiReferenceLoading((prevLoading) => {
-      const newLoading = {
-        [offersCollectionId]: offersLoading,
-        [placesCollectionId]: placesLoading,
-      };
+  // Load collection schema on mount
 
-      // Check if loading state actually changed
-      const loadingChanged =
-        prevLoading[offersCollectionId] !== newLoading[offersCollectionId] ||
-        prevLoading[placesCollectionId] !== newLoading[placesCollectionId];
-
-      return loadingChanged ? newLoading : prevLoading;
-    });
-  }, [offersData, placesData, offersLoading, placesLoading]);
   // Load collection schema on mount
   useEffect(() => {
     const loadCollectionSchema = async (collectionsFields) => {
@@ -214,7 +308,7 @@ const PerkForm = () => {
 
         const fieldValue = processedFieldData[field.slug];
 
-        if (fieldValue) {
+        if (fieldValue !== undefined && fieldValue !== null) {
           switch (field.type) {
             case "Option":
               // Convert option ID back to option name for display
@@ -288,9 +382,9 @@ const PerkForm = () => {
       }
     });
 
-    // Then add any remaining fields that weren't in the sequence (excluding slug)
+    // Then add any remaining fields that weren't in the sequence (excluding removed fields)
     Object.values(fieldsMap).forEach((field) => {
-      if (!removedFileds.includes(field.slug)) {
+      if (!removedFields.includes(field.slug)) {
         orderedFields.push(field);
       }
     });
@@ -298,6 +392,7 @@ const PerkForm = () => {
     return orderedFields;
   };
 
+  // Group fields by logical sections while maintaining sequence
   // Group fields by logical sections while maintaining sequence
   const getFieldsBySequencedCategories = () => {
     const orderedFields = getOrderedFields();
@@ -318,7 +413,7 @@ const PerkForm = () => {
 
       if (slug.includes("elite")) {
         categories.elite.push(field);
-      } else if (slug.includes("free")) {
+      } else if (slug.includes("free") && slug !== "free-members-offers") {
         categories.free.push(field);
       } else if (
         slug.includes("event") ||
@@ -435,14 +530,6 @@ const PerkForm = () => {
       }
     }
 
-    if (formData["percent-off-this-deal-gives-you"]) {
-      const percent = parseFloat(formData["percent-off-this-deal-gives-you"]);
-      if (percent < 0 || percent > 100) {
-        newErrors["percent-off-this-deal-gives-you"] =
-          "Percentage must be between 0 and 100";
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -522,7 +609,7 @@ const PerkForm = () => {
 
           const fieldValue = processedFormData[field.slug];
 
-          if (fieldValue) {
+          if (fieldValue !== undefined && fieldValue !== null) {
             switch (field.type) {
               case "Option":
                 // Convert option name back to option ID for submission
@@ -1392,38 +1479,10 @@ const PerkForm = () => {
           </div>
         )}
 
-        {/* Location */}
-        {fieldCategories.location.length > 0 && (
-          <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Location Information</h3>
-            <div style={gridStyle}>
-              {fieldCategories.location.map((field) => (
-                <div key={field.id} style={fieldStyle}>
-                  <label style={labelStyle}>
-                    {field.displayName}
-                    {field.isRequired && (
-                      <span style={{ color: "#ef4444" }}> *</span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {field.helpText}
-                    </span>
-                  )}
-                  {errors[field.slug] && (
-                    <div style={errorStyle}>{errors[field.slug]}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* General Fields */}
         {fieldCategories.general.length > 0 && (
           <div style={formSectionStyle}>
-            <h3 style={sectionTitleStyle}>Perk Detail</h3>
+            <h3 style={sectionTitleStyle}>Perk Details</h3>
             <div style={gridStyle}>
               {fieldCategories.general.map((field) => (
                 <div key={field.id} style={fieldStyle}>
