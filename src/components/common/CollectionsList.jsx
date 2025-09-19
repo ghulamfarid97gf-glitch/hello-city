@@ -86,6 +86,8 @@ const CollectionsList = ({ collectionId }) => {
     true
   );
 
+  console.log("collectionId ", collectionId);
+
   // Use collection fields hook to get the schema
   const {
     collectionsFields,
@@ -166,6 +168,10 @@ const CollectionsList = ({ collectionId }) => {
       navigate(`/offers/edit/${perkId}`);
     } else if (currentPath.includes("/places")) {
       navigate(`/places/edit/${perkId}`);
+    } else if (currentPath.includes("/elite")) {
+      navigate(`/elite-offers/edit/${perkId}`);
+    } else if (currentPath.includes("/non-member")) {
+      navigate(`/non-members-offers/edit/${perkId}`);
     } else {
       navigate(`/perks/edit/${perkId}`);
     }
@@ -178,6 +184,10 @@ const CollectionsList = ({ collectionId }) => {
       navigate("/offers/add");
     } else if (currentPath.includes("/places")) {
       navigate("/places/add");
+    } else if (currentPath.includes("/elite")) {
+      navigate("/elite-offers/add");
+    } else if (currentPath.includes("/non-member")) {
+      navigate("/non-members-offers/add");
     } else {
       navigate("/perks/add");
     }
@@ -203,6 +213,8 @@ const CollectionsList = ({ collectionId }) => {
     const currentPath = window.location.pathname;
     if (currentPath.includes("/offers")) return "Offers";
     if (currentPath.includes("/places")) return "Places";
+    if (currentPath.includes("/elite")) return "Elites";
+    if (currentPath.includes("/non-members")) return "Non Members";
     return "Perks";
   };
 

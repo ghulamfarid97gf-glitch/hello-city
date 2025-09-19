@@ -15,6 +15,16 @@ const Navbar = () => {
       collectionId: "686cd18f382b5b2f1dcc787b",
     },
     {
+      name: "Elite Offers",
+      path: "/elite-offers",
+      collectionId: "68c9944867e93829d28f767f",
+    },
+    {
+      name: "Non-Member Offers",
+      path: "/non-members-offers",
+      collectionId: "68cab08b7569afdf5b23fd30",
+    },
+    {
       name: "Places",
       path: "/places",
       collectionId: "688b15b04ee8c4d17f71c5c3",

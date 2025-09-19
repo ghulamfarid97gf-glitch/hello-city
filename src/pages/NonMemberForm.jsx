@@ -20,7 +20,7 @@ import {
 
 // Constants
 const COLLECTIONS = {
-  OFFERS: "686cd18f382b5b2f1dcc787b",
+  OFFERS: "68cab08b7569afdf5b23fd30",
 };
 
 const FIELD_ORDER = [
@@ -42,7 +42,7 @@ const FIELD_ORDER = [
   "link-to-event",
 ];
 
-const OfferForm = () => {
+const NonMemberForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -457,7 +457,7 @@ const OfferForm = () => {
         toast.success(
           isEdit ? "Offer updated successfully" : "Offer created successfully"
         );
-        navigate("/offers");
+        navigate("/non-members-offers");
       } else {
         console.error("API Error:", result.error);
         setErrors({
@@ -1049,7 +1049,7 @@ const OfferForm = () => {
             Error loading offer: {fetchError.message}
           </div>
           <button
-            onClick={() => navigate("/offers")}
+            onClick={() => navigate("/non-members-offers")}
             style={secondaryButtonStyle}
           >
             Back to List
@@ -1085,7 +1085,7 @@ const OfferForm = () => {
           }}
         >
           <button
-            onClick={() => navigate("/offers")}
+            onClick={() => navigate("/non-members-offers")}
             style={secondaryButtonStyle}
           >
             ← Back to List
@@ -1234,7 +1234,7 @@ const OfferForm = () => {
           >
             <button
               type="button"
-              onClick={() => navigate("/offers")}
+              onClick={() => navigate("/non-members-offers")}
               style={secondaryButtonStyle}
               disabled={loading}
             >
@@ -1262,4 +1262,4 @@ const OfferForm = () => {
   );
 };
 
-export default OfferForm;
+export default NonMemberForm;

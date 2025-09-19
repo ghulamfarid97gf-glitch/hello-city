@@ -20,7 +20,7 @@ import {
 
 // Constants
 const COLLECTIONS = {
-  OFFERS: "686cd18f382b5b2f1dcc787b",
+  OFFERS: "68c9944867e93829d28f767f",
 };
 
 const FIELD_ORDER = [
@@ -42,7 +42,7 @@ const FIELD_ORDER = [
   "link-to-event",
 ];
 
-const OfferForm = () => {
+const EliteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -61,6 +61,8 @@ const OfferForm = () => {
     COLLECTIONS.OFFERS,
     true
   );
+
+  console.log("collectionsFields ", collectionsFields);
 
   const removedFields = ["slug"];
 
@@ -388,6 +390,8 @@ const OfferForm = () => {
     }
   };
 
+  console.log("collectionSchema ", collectionSchema);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitAttempted(true);
@@ -457,7 +461,7 @@ const OfferForm = () => {
         toast.success(
           isEdit ? "Offer updated successfully" : "Offer created successfully"
         );
-        navigate("/offers");
+        navigate("/elite-offers");
       } else {
         console.error("API Error:", result.error);
         setErrors({
@@ -1049,7 +1053,7 @@ const OfferForm = () => {
             Error loading offer: {fetchError.message}
           </div>
           <button
-            onClick={() => navigate("/offers")}
+            onClick={() => navigate("/elite-offers")}
             style={secondaryButtonStyle}
           >
             Back to List
@@ -1085,7 +1089,7 @@ const OfferForm = () => {
           }}
         >
           <button
-            onClick={() => navigate("/offers")}
+            onClick={() => navigate("/elite-offers")}
             style={secondaryButtonStyle}
           >
             ← Back to List
@@ -1234,7 +1238,7 @@ const OfferForm = () => {
           >
             <button
               type="button"
-              onClick={() => navigate("/offers")}
+              onClick={() => navigate("/elite-offers")}
               style={secondaryButtonStyle}
               disabled={loading}
             >
@@ -1262,4 +1266,4 @@ const OfferForm = () => {
   );
 };
 
-export default OfferForm;
+export default EliteForm;
