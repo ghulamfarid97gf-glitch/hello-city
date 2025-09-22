@@ -81,7 +81,7 @@ class WebflowService {
       );
     } else {
       return this.makeRequest(
-        `/collections/${collectionId}/items?skipInvalidFiles=true?live=true`,
+        `/collections/${collectionId}/items/live?skipInvalidFiles=true `,
         {
           method: "POST",
           data: payload,
