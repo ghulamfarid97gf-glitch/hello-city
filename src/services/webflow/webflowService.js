@@ -142,8 +142,8 @@ class WebflowService {
   }
 
   // Delete collection item - DELETE method as per your curl example
-  async deleteCollectionItem(collectionId, itemId) {
-    if (!collectionId || !itemId) {
+  async deleteCollectionItem(collectionId, item) {
+    if (!collectionId || !item) {
       return {
         data: null,
         success: false,
@@ -151,9 +151,21 @@ class WebflowService {
       };
     }
 
-    return this.makeRequest(`/collections/${collectionId}/items/${itemId}`, {
-      method: "DELETE",
-    });
+    if (item?.id && item?.isDraft) {
+      return this.makeRequest(
+        `/collections/${collectionId}/items/${item?.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+    } else {
+      return this.makeRequest(
+        `/collections/${collectionId}/items/${item?.id}/live`,
+        {
+          method: "DELETE",
+        }
+      );
+    }
   }
 
   // Batch operations (if needed in the future)

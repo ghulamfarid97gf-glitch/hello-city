@@ -116,13 +116,13 @@ const CollectionsList = ({ collectionId }) => {
   }, [collectionsFields]);
 
   // Handle delete functionality
-  const handleDeleteClick = (perkId) => {
-    setPerkToDelete(perkId);
+  const handleDeleteClick = (perk) => {
+    setPerkToDelete(perk);
     setShowDeleteModal(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!perkToDelete) return;
+    if (!perkToDelete?.id) return;
 
     setDeleteLoading(perkToDelete);
     setShowDeleteModal(false);
@@ -132,6 +132,8 @@ const CollectionsList = ({ collectionId }) => {
         collectionId,
         perkToDelete
       );
+
+      console.log("result ", result);
 
       if (result.success) {
         toast.success("Item deleted successfully!", {
@@ -618,7 +620,7 @@ const CollectionsList = ({ collectionId }) => {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(item.id)}
+                            onClick={() => handleDeleteClick(item)}
                             disabled={deleteLoading === item.id}
                             style={{
                               ...collectionsListStyles.deleteButtonStyle,

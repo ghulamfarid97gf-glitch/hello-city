@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { navbarStyles } from "../../styles/navbarStyles.style";
-// import { navbarStyles } from "../styles/navbarStyles";
 
-const Navbar = () => {
+const Navbar = ({ onLogout }) => {
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState(null);
 
@@ -50,6 +49,30 @@ const Navbar = () => {
     return style;
   };
 
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      onLogout();
+    }
+  };
+
+  // Logout button styles
+  const logoutButtonStyle = {
+    padding: "0.5rem 1rem",
+    backgroundColor: "#dc3545",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+    fontWeight: "500",
+    transition: "background-color 0.2s",
+    marginLeft: "1rem",
+  };
+
+  const logoutButtonHoverStyle = {
+    backgroundColor: "#c82333",
+  };
+
   return (
     <nav style={navbarStyles.nav}>
       <div style={navbarStyles.container}>
@@ -69,6 +92,22 @@ const Navbar = () => {
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* Right section with logout button */}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <button
+              onClick={handleLogout}
+              style={logoutButtonStyle}
+              onMouseEnter={(e) => {
+                Object.assign(e.target.style, logoutButtonHoverStyle);
+              }}
+              onMouseLeave={(e) => {
+                Object.assign(e.target.style, logoutButtonStyle);
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
