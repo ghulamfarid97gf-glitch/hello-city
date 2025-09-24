@@ -109,13 +109,23 @@ class WebflowService {
       fieldData: fieldData,
     };
 
-    return this.makeRequest(
-      `/collections/${collectionId}/items/${itemId}?skipInvalidFiles=true`,
-      {
-        method: "PATCH",
-        data: payload,
-      }
-    );
+    if (payload.isDraft) {
+      return this.makeRequest(
+        `/collections/${collectionId}/items/${itemId}?skipInvalidFiles=true`,
+        {
+          method: "PATCH",
+          data: payload,
+        }
+      );
+    } else {
+      return this.makeRequest(
+        `/collections/${collectionId}/items/${itemId}/live?skipInvalidFiles=true`,
+        {
+          method: "PATCH",
+          data: payload,
+        }
+      );
+    }
   }
 
   // Get single collection item
