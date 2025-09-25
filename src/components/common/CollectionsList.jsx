@@ -135,7 +135,7 @@ const CollectionsList = ({ collectionId }) => {
 
       console.log("result ", result);
 
-      if (result.success) {
+      if (!result.data) {
         toast.success("Item deleted successfully!", {
           position: "top-right",
           autoClose: 3000,
