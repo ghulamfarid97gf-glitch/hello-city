@@ -48,8 +48,21 @@ export default async function handler(req, res) {
 
     console.log("Webflow Response Status:", webflowResponse.status);
 
-    const responseData = await webflowResponse.json();
-    res.status(webflowResponse.status).json(responseData);
+    let responseData = null;
+    try {
+      // Only parse JSON if body exists
+      const text = await webflowResponse.text();
+      responseData = text ? JSON.parse(text) : null;
+    } catch (err) {
+      console.warn("No JSON body returned:", err.message);
+    }
+
+    if (responseData !== null) {
+      res.status(webflowResponse.status).json(responseData);
+    } else {
+      // For 204 responses, return an empty object
+      res.status(webflowResponse.status).end();
+    }
   } catch (error) {
     console.error("Function Error:", error);
     res.status(500).json({
