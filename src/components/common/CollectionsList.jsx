@@ -135,10 +135,7 @@ const CollectionsList = ({ collectionId }) => {
 
       console.log("result ", result);
 
-      if (
-        result.success ||
-        result.error?.message?.includes("Unexpected end of JSON input")
-      ) {
+      if (result.success) {
         toast.success("Item deleted successfully!", {
           position: "top-right",
           autoClose: 3000,
