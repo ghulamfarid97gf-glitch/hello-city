@@ -39,6 +39,7 @@ webflowAPI.interceptors.request.use(
 // Response interceptor for error handling (keep as is)
 webflowAPI.interceptors.response.use(
   (response) => {
+    console.log("response ", response);
     // ✅ Handle empty 204 responses (DELETE /live, etc.)
     if (response.status === 204) {
       return { ...response, data: null };
