@@ -46,7 +46,12 @@ export default async function handler(req, res) {
       body: req.method !== "GET" ? JSON.stringify(req.body) : undefined,
     });
 
-    console.log("Webflow Response Status:", webflowResponse.status);
+    const status = webflowResponse.status;
+
+    if (status === 204) {
+      // No content by spec → just return 204
+      return res.status(204).end();
+    }
 
     let responseData = null;
     try {
