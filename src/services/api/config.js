@@ -23,14 +23,18 @@ const webflowAPI = axios.create({
   headers: API_CONFIG.WEBFLOW.HEADERS,
 });
 
+console.log("error ", webflowAPI);
+
 // Request interceptor - REMOVE TOKEN FROM HERE since it's now handled by the proxy
 webflowAPI.interceptors.request.use(
   (config) => {
+    console.log("config ", config);
     // Remove the token assignment since the proxy handles authentication
     // The proxy will add the Authorization header
     return config;
   },
   (error) => {
+    console.log("config error", config);
     console.error("❌ Request Error:", error);
     return Promise.reject(error);
   }
@@ -47,6 +51,7 @@ webflowAPI.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log("response error", response, errorMessage, error);
     const errorMessage = error.response?.data?.message || error.message;
     console.error("❌ API Error:", {
       status: error.response?.status,
