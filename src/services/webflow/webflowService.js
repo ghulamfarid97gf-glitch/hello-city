@@ -166,19 +166,23 @@ class WebflowService {
     }
 
     if (item?.id && item?.isDraft) {
-      return this.makeRequest(
+      const response = this.makeRequest(
         `/collections/${collectionId}/items/${item?.id}`,
         {
           method: "DELETE",
         }
       );
+      console.log("main response ", response);
+      return response;
     } else {
-      return this.makeRequest(
+      const response = this.makeRequest(
         `/collections/${collectionId}/items/${item?.id}/live`,
         {
           method: "DELETE",
         }
       );
+      console.log("main response live", response);
+      return response;
     }
   }
 
