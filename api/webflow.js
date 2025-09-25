@@ -43,21 +43,10 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "accept-version": "1.0.0",
       },
-      body:
-        req.method !== "GET" && req.method !== "DELETE"
-          ? JSON.stringify(req.body)
-          : undefined,
+      body: req.method !== "GET" ? JSON.stringify(req.body) : undefined,
     });
-    if (req.method === "DELETE") {
-      return webflowResponse;
-    }
 
-    const status = webflowResponse.status;
-
-    if (status === 204) {
-      // No content by spec → just return 204
-      return res.status(204).end();
-    }
+    console.log("Webflow Response Status:", webflowResponse.status);
 
     let responseData = null;
     try {
