@@ -9,7 +9,18 @@ class WebflowService {
         url: endpoint,
         method: "GET",
         ...options,
+        validateStatus: () => true, // prevent axios auto errors
       });
+
+      // If no content (204), don't try to read JSON
+      if (response.status === 204) {
+        return {
+          data: null,
+          success: true,
+          error: null,
+        };
+      }
+
       return {
         data: response.data,
         success: true,
