@@ -5,8 +5,7 @@ import {
   useUpdatePerk,
   usePerk,
   useCollectionFields,
-  useCollections,
-} from "../services/webflow/useWebflow";
+} from "../services/webflow";
 import { toast } from "react-toastify";
 import {
   containerStyle,
@@ -38,20 +37,22 @@ const PlaceForm = () => {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  // API hooks
-  const { createPerk, loading: creating, error: createError } = useCreatePerk();
-  const { updatePerk, loading: updating, error: updateError } = useUpdatePerk();
+  // React Query hooks
+  const createPerk = useCreatePerk();
+  const updatePerk = useUpdatePerk();
   const {
-    perk,
-    loading: fetching,
+    data: perk,
+    isLoading: fetching,
     error: fetchError,
-  } = usePerk(COLLECTIONS.PLACES, id, isEdit);
+  } = usePerk(COLLECTIONS.PLACES, id, { enabled: isEdit });
+  const { data: collectionsFields, isLoading: fieldsLoading } =
+    useCollectionFields(COLLECTIONS.PLACES);
 
-  // Use collections hook to get items from the collection
-  const { collectionsFields, loading: fieldsLoading } = useCollectionFields(
-    COLLECTIONS.PLACES,
-    true
-  );
+  // Derive loading and error states
+  const creating = createPerk.isPending;
+  const updating = updatePerk.isPending;
+  const createError = createPerk.error;
+  const updateError = updatePerk.error;
 
   // Dynamic form state
   const [collectionSchema, setCollectionSchema] = useState(null);
@@ -194,7 +195,6 @@ const PlaceForm = () => {
     }
   }, [perk, isEdit, collectionSchema, fieldsLoading]);
 
-  // Get fields that aren't in the removed list
   // Get fields that aren't in the removed list
   const getAvailableFields = () => {
     if (!collectionSchema?.fields) return [];
@@ -436,23 +436,45 @@ const PlaceForm = () => {
         });
       }
 
-      let result;
       if (isEdit) {
-        result = await updatePerk(COLLECTIONS.PLACES, id, processedFormData);
-      } else {
-        result = await createPerk(COLLECTIONS.PLACES, processedFormData);
-      }
-
-      if (result.success) {
-        toast.success(
-          isEdit ? "Place updated successfully" : "Place created successfully"
+        updatePerk.mutate(
+          {
+            collectionId: COLLECTIONS.PLACES,
+            itemId: id,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Place updated successfully");
+              navigate("/places");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
         );
-        navigate("/places");
       } else {
-        console.error("API Error:", result.error);
-        setErrors({
-          submit: result.error.message || "An error occurred while saving",
-        });
+        createPerk.mutate(
+          {
+            collectionId: COLLECTIONS.PLACES,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Place created successfully");
+              navigate("/places");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
+        );
       }
     } catch (error) {
       console.error("Form submission error:", error);

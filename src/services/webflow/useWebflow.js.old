@@ -1,6 +1,6 @@
 // Custom hooks for Webflow API integration
 import { useState, useEffect, useCallback } from "react";
-import webflowService from "./webflowService";
+import webflowService from "../services/webflow";
 // import webflowService from "../services/webflow/webflowService.js";
 
 // Generic hook for API calls with loading and error states

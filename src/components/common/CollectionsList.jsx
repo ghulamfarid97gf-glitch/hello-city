@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCollections } from "../../services/webflow/useWebflow";
-import { useCollectionFields } from "../../services/webflow/useWebflow"; // Add this import
-import webflowService from "../../services/webflow/webflowService";
+import {
+  useCollections,
+  useCollectionFields,
+  useDeleteCollectionItem,
+} from "../../services/webflow";
 import Loading from "./Loading";
 import { toast } from "react-toastify";
 import { collectionsListStyles } from "../../styles/collectionsListStyles.style";
@@ -76,24 +78,29 @@ const CollectionsList = ({ collectionId }) => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [deleteLoading, setDeleteLoading] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [perkToDelete, setPerkToDelete] = useState(null);
 
-  // Use collections hook to get items from the collection
-  const { collections, loading, error, refetch } = useCollections(
-    collectionId,
-    true
-  );
+  // React Query hooks
+  const {
+    data: collectionsData,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useCollections(collectionId);
+  const {
+    data: collectionsFields,
+    isLoading: fieldsLoading,
+    error: fieldsError,
+  } = useCollectionFields(collectionId);
+
+  // Delete mutation
+  const deleteMutation = useDeleteCollectionItem();
+
+  // Extract collections array from the response
+  const collections = collectionsData?.items || [];
 
   console.log("collectionId ", collectionId);
-
-  // Use collection fields hook to get the schema
-  const {
-    collectionsFields,
-    loading: fieldsLoading,
-    error: fieldsError,
-  } = useCollectionFields(collectionId, true);
 
   // Create field mapping from slug to display name
   const fieldMapping = useMemo(() => {
@@ -124,38 +131,30 @@ const CollectionsList = ({ collectionId }) => {
   const handleDeleteConfirm = async () => {
     if (!perkToDelete?.id) return;
 
-    setDeleteLoading(perkToDelete);
     setShowDeleteModal(false);
 
-    try {
-      const result = await webflowService.deleteCollectionItem(
+    deleteMutation.mutate(
+      {
         collectionId,
-        perkToDelete
-      );
-
-      console.log("result ", result);
-
-      if (result.success) {
-        toast.success("Item deleted successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        refetch();
-      } else {
-        toast.error(`Failed to delete item: ${result.error.message}`, {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        item: perkToDelete,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Item deleted successfully!", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          setPerkToDelete(null);
+        },
+        onError: (error) => {
+          toast.error(`Failed to delete item: ${error.message}`, {
+            position: "top-right",
+            autoClose: 5000,
+          });
+          setPerkToDelete(null);
+        },
       }
-    } catch (error) {
-      toast.error(`Error deleting item: ${error.message}`, {
-        position: "top-right",
-        autoClose: 5000,
-      });
-    } finally {
-      setDeleteLoading(null);
-      setPerkToDelete(null);
-    }
+    );
   };
 
   const handleDeleteCancel = () => {
@@ -621,15 +620,24 @@ const CollectionsList = ({ collectionId }) => {
                           </button>
                           <button
                             onClick={() => handleDeleteClick(item)}
-                            disabled={deleteLoading === item.id}
+                            disabled={
+                              deleteMutation.isPending &&
+                              perkToDelete?.id === item.id
+                            }
                             style={{
                               ...collectionsListStyles.deleteButtonStyle,
-                              ...(deleteLoading === item.id
+                              ...(deleteMutation.isPending &&
+                              perkToDelete?.id === item.id
                                 ? collectionsListStyles.deleteButtonDisabledStyle
                                 : {}),
                             }}
                             onMouseOver={(e) => {
-                              if (deleteLoading !== item.id) {
+                              if (
+                                !(
+                                  deleteMutation.isPending &&
+                                  perkToDelete?.id === item.id
+                                )
+                              ) {
                                 Object.assign(
                                   e.target.style,
                                   collectionsListStyles.deleteButtonHoverStyle
@@ -637,7 +645,12 @@ const CollectionsList = ({ collectionId }) => {
                               }
                             }}
                             onMouseOut={(e) => {
-                              if (deleteLoading !== item.id) {
+                              if (
+                                !(
+                                  deleteMutation.isPending &&
+                                  perkToDelete?.id === item.id
+                                )
+                              ) {
                                 Object.assign(
                                   e.target.style,
                                   collectionsListStyles.deleteButtonStyle
@@ -645,12 +658,14 @@ const CollectionsList = ({ collectionId }) => {
                               }
                             }}
                             title={
-                              deleteLoading === item.id
+                              deleteMutation.isPending &&
+                              perkToDelete?.id === item.id
                                 ? "Deleting..."
                                 : "Delete"
                             }
                           >
-                            {deleteLoading === item.id ? (
+                            {deleteMutation.isPending &&
+                            perkToDelete?.id === item.id ? (
                               <div
                                 style={collectionsListStyles.smallSpinnerStyle}
                               />
@@ -779,7 +794,7 @@ const CollectionsList = ({ collectionId }) => {
       )}
 
       {/* CSS Animation */}
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes spin {
           0% {
             transform: rotate(0deg);

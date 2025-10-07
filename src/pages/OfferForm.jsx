@@ -5,7 +5,7 @@ import {
   useUpdatePerk,
   usePerk,
   useCollectionFields,
-} from "../services/webflow/useWebflow";
+} from "../services/webflow";
 import { toast } from "react-toastify";
 import {
   containerStyle,
@@ -47,20 +47,22 @@ const OfferForm = () => {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  // API hooks
-  const { createPerk, loading: creating, error: createError } = useCreatePerk();
-  const { updatePerk, loading: updating, error: updateError } = useUpdatePerk();
+  // React Query hooks
+  const createPerk = useCreatePerk();
+  const updatePerk = useUpdatePerk();
   const {
-    perk,
-    loading: fetching,
+    data: perk,
+    isLoading: fetching,
     error: fetchError,
-  } = usePerk(COLLECTIONS.OFFERS, id, isEdit);
+  } = usePerk(COLLECTIONS.OFFERS, id, { enabled: isEdit });
+  const { data: collectionsFields, isLoading: fieldsLoading } =
+    useCollectionFields(COLLECTIONS.OFFERS);
 
-  // Use collections hook to get items from the collection
-  const { collectionsFields, loading: fieldsLoading } = useCollectionFields(
-    COLLECTIONS.OFFERS,
-    true
-  );
+  // Derive loading and error states
+  const creating = createPerk.isPending;
+  const updating = updatePerk.isPending;
+  const createError = createPerk.error;
+  const updateError = updatePerk.error;
 
   const removedFields = ["slug"];
 
@@ -446,23 +448,45 @@ const OfferForm = () => {
         });
       }
 
-      let result;
       if (isEdit) {
-        result = await updatePerk(COLLECTIONS.OFFERS, id, processedFormData);
-      } else {
-        result = await createPerk(COLLECTIONS.OFFERS, processedFormData);
-      }
-
-      if (result.success) {
-        toast.success(
-          isEdit ? "Offer updated successfully" : "Offer created successfully"
+        updatePerk.mutate(
+          {
+            collectionId: COLLECTIONS.OFFERS,
+            itemId: id,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Offer updated successfully");
+              navigate("/elite-offers");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
         );
-        navigate("/offers");
       } else {
-        console.error("API Error:", result.error);
-        setErrors({
-          submit: result.error.message || "An error occurred while saving",
-        });
+        createPerk.mutate(
+          {
+            collectionId: COLLECTIONS.OFFERS,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Offer created successfully");
+              navigate("/elite-offers");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
+        );
       }
     } catch (error) {
       console.error("Form submission error:", error);

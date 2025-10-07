@@ -13,8 +13,7 @@ import NonMemberForm from "./pages/NonMemberForm";
 import EliteForm from "./pages/EliteForm";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoginPage from "./components/common/LoginPage";
-// import LoginPage from "./pages/LoginPage";
-// import ProtectedRoute from "./components/common/ProtectedRoute";
+import QueryProvider from "./providers/QueryProvider";
 
 // Collection configurations
 const COLLECTIONS = {
@@ -99,175 +98,179 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <ErrorBoundary>
-        <LoginPage onLogin={login} />
-        <ToastContainer />
-      </ErrorBoundary>
+      <QueryProvider>
+        <ErrorBoundary>
+          <LoginPage onLogin={login} />
+          <ToastContainer />
+        </ErrorBoundary>
+      </QueryProvider>
     );
   }
 
   return (
-    <ErrorBoundary>
-      <Router>
-        <div style={appStyles.appContainer}>
-          <Navbar onLogout={logout} />
-          <main style={appStyles.mainContent}>
-            <Routes>
-              {/* Perks Routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <CollectionPage
-                      collectionId={COLLECTIONS.PERKS.id}
-                      title={COLLECTIONS.PERKS.name}
-                      description={COLLECTIONS.PERKS.description}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/perks/add"
-                element={
-                  <ProtectedRoute>
-                    <PerkForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/perks/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <PerkForm />
-                  </ProtectedRoute>
-                }
-              />
+    <QueryProvider>
+      <ErrorBoundary>
+        <Router>
+          <div style={appStyles.appContainer}>
+            <Navbar onLogout={logout} />
+            <main style={appStyles.mainContent}>
+              <Routes>
+                {/* Perks Routes */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <CollectionPage
+                        collectionId={COLLECTIONS.PERKS.id}
+                        title={COLLECTIONS.PERKS.name}
+                        description={COLLECTIONS.PERKS.description}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/perks/add"
+                  element={
+                    <ProtectedRoute>
+                      <PerkForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/perks/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <PerkForm />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Offers Routes */}
-              <Route
-                path="/offers"
-                element={
-                  <ProtectedRoute>
-                    <CollectionPage
-                      collectionId={COLLECTIONS.OFFERS.id}
-                      title={COLLECTIONS.OFFERS.name}
-                      description={COLLECTIONS.OFFERS.description}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/offers/add"
-                element={
-                  <ProtectedRoute>
-                    <OfferForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/offers/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <OfferForm />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Offers Routes */}
+                <Route
+                  path="/offers"
+                  element={
+                    <ProtectedRoute>
+                      <CollectionPage
+                        collectionId={COLLECTIONS.OFFERS.id}
+                        title={COLLECTIONS.OFFERS.name}
+                        description={COLLECTIONS.OFFERS.description}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/offers/add"
+                  element={
+                    <ProtectedRoute>
+                      <OfferForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/offers/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <OfferForm />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Elite Member Offer */}
-              <Route
-                path="/elite-offers"
-                element={
-                  <ProtectedRoute>
-                    <CollectionPage
-                      collectionId={COLLECTIONS.ELITE.id}
-                      title={COLLECTIONS.ELITE.name}
-                      description={COLLECTIONS.ELITE.description}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/elite-offers/add"
-                element={
-                  <ProtectedRoute>
-                    <EliteForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/elite-offers/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <EliteForm />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Elite Member Offer */}
+                <Route
+                  path="/elite-offers"
+                  element={
+                    <ProtectedRoute>
+                      <CollectionPage
+                        collectionId={COLLECTIONS.ELITE.id}
+                        title={COLLECTIONS.ELITE.name}
+                        description={COLLECTIONS.ELITE.description}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/elite-offers/add"
+                  element={
+                    <ProtectedRoute>
+                      <EliteForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/elite-offers/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <EliteForm />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Non Member Offer */}
-              <Route
-                path="/non-members-offers"
-                element={
-                  <ProtectedRoute>
-                    <CollectionPage
-                      collectionId={COLLECTIONS.NON_MEMBERS.id}
-                      title={COLLECTIONS.NON_MEMBERS.name}
-                      description={COLLECTIONS.NON_MEMBERS.description}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/non-members-offers/add"
-                element={
-                  <ProtectedRoute>
-                    <NonMemberForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/non-members-offers/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <NonMemberForm />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Non Member Offer */}
+                <Route
+                  path="/non-members-offers"
+                  element={
+                    <ProtectedRoute>
+                      <CollectionPage
+                        collectionId={COLLECTIONS.NON_MEMBERS.id}
+                        title={COLLECTIONS.NON_MEMBERS.name}
+                        description={COLLECTIONS.NON_MEMBERS.description}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/non-members-offers/add"
+                  element={
+                    <ProtectedRoute>
+                      <NonMemberForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/non-members-offers/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <NonMemberForm />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Places Routes */}
-              <Route
-                path="/places"
-                element={
-                  <ProtectedRoute>
-                    <CollectionPage
-                      collectionId={COLLECTIONS.PLACES.id}
-                      title={COLLECTIONS.PLACES.name}
-                      description={COLLECTIONS.PLACES.description}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/places/add"
-                element={
-                  <ProtectedRoute>
-                    <PlaceForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/places/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <PlaceForm />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
-          <ToastContainer />
-        </div>
-      </Router>
-    </ErrorBoundary>
+                {/* Places Routes */}
+                <Route
+                  path="/places"
+                  element={
+                    <ProtectedRoute>
+                      <CollectionPage
+                        collectionId={COLLECTIONS.PLACES.id}
+                        title={COLLECTIONS.PLACES.name}
+                        description={COLLECTIONS.PLACES.description}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/places/add"
+                  element={
+                    <ProtectedRoute>
+                      <PlaceForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/places/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <PlaceForm />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </main>
+            <ToastContainer />
+          </div>
+        </Router>
+      </ErrorBoundary>
+    </QueryProvider>
   );
 }
 

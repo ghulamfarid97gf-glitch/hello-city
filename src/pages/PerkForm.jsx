@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useCreatePerk,
@@ -6,7 +6,7 @@ import {
   usePerk,
   useCollectionFields,
   useCollections,
-} from "../services/webflow/useWebflow";
+} from "../services/webflow";
 import { toast } from "react-toastify";
 import {
   containerStyle,
@@ -29,20 +29,22 @@ const PerkForm = () => {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  // API hooks
-  const { createPerk, loading: creating, error: createError } = useCreatePerk();
-  const { updatePerk, loading: updating, error: updateError } = useUpdatePerk();
+  // React Query hooks
+  const createPerk = useCreatePerk();
+  const updatePerk = useUpdatePerk();
   const {
-    perk,
-    loading: fetching,
+    data: perk,
+    isLoading: fetching,
     error: fetchError,
-  } = usePerk(COLLECTIONS.PERKS, id, isEdit);
+  } = usePerk(COLLECTIONS.PERKS, id, { enabled: isEdit });
+  const { data: collectionsFields, isLoading: fieldsLoading } =
+    useCollectionFields(COLLECTIONS.PERKS);
 
-  // Use collections hook to get items from the collection
-  const { collectionsFields, loading: fieldsLoading } = useCollectionFields(
-    COLLECTIONS.PERKS,
-    true
-  );
+  // Derive loading and error states
+  const creating = createPerk.isPending;
+  const updating = updatePerk.isPending;
+  const createError = createPerk.error;
+  const updateError = updatePerk.error;
 
   const removedFields = ["plan-wise-coupen", "slug", "location"];
 
@@ -189,21 +191,24 @@ const PerkForm = () => {
   const eliteMemberOffersCollectionId = "68c9944867e93829d28f767f";
   const placesCollectionId = "688b15b04ee8c4d17f71c5c3";
 
-  // Use your existing hooks for known collections
-  const { collections: offersData, loading: offersLoading } = useCollections(
-    offersCollectionId,
-    true
-  );
-  const { collections: nonMemberOffersData, loading: nonMemberOffersLoading } =
-    useCollections(nonMemberOffersCollectionId, true);
+  const { data: offersDataResponse, isLoading: offersLoading } =
+    useCollections(offersCollectionId);
   const {
-    collections: eliteMemberOffersData,
-    loading: eliteMemberOffersLoading,
-  } = useCollections(eliteMemberOffersCollectionId, true);
-  const { collections: placesData, loading: placesLoading } = useCollections(
-    placesCollectionId,
-    true
-  );
+    data: nonMemberOffersDataResponse,
+    isLoading: nonMemberOffersLoading,
+  } = useCollections(nonMemberOffersCollectionId);
+  const {
+    data: eliteMemberOffersDataResponse,
+    isLoading: eliteMemberOffersLoading,
+  } = useCollections(eliteMemberOffersCollectionId);
+  const { data: placesDataResponse, isLoading: placesLoading } =
+    useCollections(placesCollectionId);
+
+  // Extract items array
+  const offersData = offersDataResponse?.items || [];
+  const nonMemberOffersData = nonMemberOffersDataResponse?.items || [];
+  const eliteMemberOffersData = eliteMemberOffersDataResponse?.items || [];
+  const placesData = placesDataResponse?.items || [];
 
   // Update multiReferenceData when collections load using your existing hooks
   useEffect(() => {
@@ -646,23 +651,45 @@ const PerkForm = () => {
         });
       }
 
-      let result;
       if (isEdit) {
-        result = await updatePerk(COLLECTIONS.PERKS, id, processedFormData);
-      } else {
-        result = await createPerk(COLLECTIONS.PERKS, processedFormData);
-      }
-
-      if (result.success) {
-        toast.success(
-          isEdit ? "Perk updated successfully" : "Perk created successfully"
+        updatePerk.mutate(
+          {
+            collectionId: COLLECTIONS.PERKS,
+            itemId: id,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Perk updated successfully");
+              navigate("/");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
         );
-        navigate("/");
       } else {
-        console.error("API Error:", result.error);
-        setErrors({
-          submit: result.error.message || "An error occurred while saving",
-        });
+        createPerk.mutate(
+          {
+            collectionId: COLLECTIONS.PERKS,
+            itemData: processedFormData,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Perk created successfully");
+              navigate("/");
+            },
+            onError: (error) => {
+              console.error("API Error:", error);
+              setErrors({
+                submit: error.message || "An error occurred while saving",
+              });
+            },
+          }
+        );
       }
     } catch (error) {
       console.error("Form submission error:", error);

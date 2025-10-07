@@ -1,72 +1,64 @@
-// API configuration and base setup
 import axios from "axios";
 
-const LOCAL_SERVER_PROXY_URL = "/api/webflow";
-const WEB_FLOW_BASE_URL = "https://api.webflow.com/v2";
+const API_KEY = import.meta.env.VITE_CLIENT_API_KEY;
 
-// Base API configuration
+console.log("API_KEY ", API_KEY);
+// Backend server URLs
+const LOCAL_SERVER_URL = "http://localhost:3000";
+const PRODUCTION_SERVER_URL = ""; // Add your deployed backend URL later
+
+// Use local for development, production for deployed
+const API_BASE_URL = import.meta.env.PROD
+  ? PRODUCTION_SERVER_URL
+  : LOCAL_SERVER_URL;
+
 const API_CONFIG = {
   WEBFLOW: {
-    BASE_URL: LOCAL_SERVER_PROXY_URL,
+    BASE_URL: `${API_BASE_URL}/api`,
     TIMEOUT: 10000,
     HEADERS: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "x-api-key": import.meta.env.VITE_CLIENT_API_KEY || "",
     },
   },
 };
 
-// Create axios instances for different APIs
 const webflowAPI = axios.create({
   baseURL: API_CONFIG.WEBFLOW.BASE_URL,
   timeout: API_CONFIG.WEBFLOW.TIMEOUT,
   headers: API_CONFIG.WEBFLOW.HEADERS,
 });
 
-console.log("error ", webflowAPI);
-
-// Request interceptor - REMOVE TOKEN FROM HERE since it's now handled by the proxy
 webflowAPI.interceptors.request.use(
   (config) => {
-    console.log("config ", config);
-    // Remove the token assignment since the proxy handles authentication
-    // The proxy will add the Authorization header
+    console.log("Request:", config.method?.toUpperCase(), config.url);
     return config;
   },
   (error) => {
-    console.log("config error", config);
-    console.error("❌ Request Error:", error);
+    console.error("Request Error:", error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for error handling (keep as is)
 webflowAPI.interceptors.response.use(
   (response) => {
-    console.log("response ", response);
-    // ✅ Handle empty 204 responses (DELETE /live, etc.)
+    // Your backend wraps data in { data: ... }
+    if (response.data?.data) {
+      return { ...response, data: response.data.data };
+    }
     if (response.status === 204) {
       return { ...response, data: null };
     }
     return response;
   },
   (error) => {
-    console.log("response error", response, errorMessage, error);
-    const errorMessage = error.response?.data?.message || error.message;
-    console.error("❌ API Error:", {
+    const errorMessage = error.response?.data?.error || error.message;
+    console.error("API Error:", {
       status: error.response?.status,
       message: errorMessage,
       url: error.config?.url,
     });
-
-    if (error.response?.status === 401) {
-      console.error("Authentication failed. Please check your API token.");
-    } else if (error.response?.status === 404) {
-      console.error("Resource not found.");
-    } else if (error.response?.status >= 500) {
-      console.error("Server error. Please try again later.");
-    }
-
     return Promise.reject(error);
   }
 );
