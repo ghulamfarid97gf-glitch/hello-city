@@ -130,13 +130,9 @@ const PerkForm = () => {
       setMultiReferenceLoading(loadingState);
 
       try {
-        // Since we can't use dynamic hooks, we'll fetch collections using a different approach
-        // You'll need to modify this based on your actual API structure
         const collectionsPromises = multiReferenceCollectionIds.map(
           async (collectionId) => {
             try {
-              // Replace this with your actual API call method
-              // If you have a direct API service method, use that instead
               const response = await fetch(
                 `https://dzkdnbbt5m.us-east-1.awsapprunner.com/api/collections/${collectionId}/items`
               );
