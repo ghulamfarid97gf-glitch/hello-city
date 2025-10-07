@@ -1,11 +1,8 @@
 import axios from "axios";
 
-const API_KEY = import.meta.env.VITE_CLIENT_API_KEY;
-
-console.log("API_KEY ", API_KEY);
 // Backend server URLs
 const LOCAL_SERVER_URL = "http://localhost:3000";
-const PRODUCTION_SERVER_URL = ""; // Add your deployed backend URL later
+const PRODUCTION_SERVER_URL = "https://dzkdnbbt5m.us-east-1.awsapprunner.com"; // Add your deployed backend URL later
 
 // Use local for development, production for deployed
 const API_BASE_URL = import.meta.env.PROD

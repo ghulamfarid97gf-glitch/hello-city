@@ -138,7 +138,7 @@ const PerkForm = () => {
               // Replace this with your actual API call method
               // If you have a direct API service method, use that instead
               const response = await fetch(
-                `/api/webflow/collections/${collectionId}/items`
+                `https://dzkdnbbt5m.us-east-1.awsapprunner.com/api/collections/${collectionId}/items`
               );
               if (!response.ok) {
                 throw new Error(`Failed to fetch collection ${collectionId}`);
